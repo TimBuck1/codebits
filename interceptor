@@ -1,0 +1,61 @@
+If you want to write the Kafka messages to a file as soon as they are produced, you can achieve this using a custom Kafka `ProducerInterceptor`. A `ProducerInterceptor` allows you to intercept and modify records before they are sent to Kafka. Here's how you can implement it to write the messages to a file:
+
+### Step 1: Implement a Custom ProducerInterceptor
+
+First, create a class that implements the `org.apache.kafka.clients.producer.ProducerInterceptor` interface. Implement the `onSend` method to write the messages to a file:
+
+```java
+import org.apache.kafka.clients.producer.ProducerInterceptor;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import java.io.FileWriter;
+import java.io.IOException;
+
+public class FileWritingProducerInterceptor implements ProducerInterceptor<String, String> {
+    private final String filePath;
+
+    public FileWritingProducerInterceptor(String filePath) {
+        this.filePath = filePath;
+    }
+
+    @Override
+    public ProducerRecord<String, String> onSend(ProducerRecord<String, String> record) {
+        // Write the message to the file
+        try (FileWriter writer = new FileWriter(filePath, true)) {
+            writer.write(record.value() + "\n");
+        } catch (IOException e) {
+            e.printStackTrace(); // Handle the exception properly
+        }
+        return record;
+    }
+
+    @Override
+    public void close() {
+        // Close any resources if needed
+    }
+
+    @Override
+    public void configure(java.util.Map<java.lang.String, ?> configs) {
+        // Configure the interceptor if needed
+    }
+}
+```
+
+In this code, the `onSend` method appends the Kafka message's value to the specified file.
+
+### Step 2: Configure Kafka Producer with the Interceptor
+
+Configure your Kafka producer to use the custom interceptor by adding it to the producer properties:
+
+```java
+Properties properties = new Properties();
+properties.put("bootstrap.servers", "your-kafka-broker:9092");
+properties.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+properties.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+properties.put("interceptor.classes", "your.package.FileWritingProducerInterceptor");
+
+KafkaProducer<String, String> producer = new KafkaProducer<>(properties);
+```
+
+Replace `"your.package.FileWritingProducerInterceptor"` with the actual package name where your `FileWritingProducerInterceptor` class is located.
+
+Now, whenever you send a message using the Kafka producer, it will be intercepted by `FileWritingProducerInterceptor`, and the message value will be appended to the specified file. Please ensure you handle exceptions and close resources properly in a production-ready implementation.
