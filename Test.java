@@ -62,3 +62,27 @@ public class Main {
         return value;
     }
 }
+import com.google.protobuf.ByteString;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
+public class Main {
+    public static void main(String[] args) {
+        // The byte array representing the BInteger value [37, 0, 0, 0, 0, 0, 0, 0]
+        byte[] byteArray = {37, 0, 0, 0, 0, 0, 0, 0};
+
+        // Reverse the byte array for little-endian order
+        for (int i = 0; i < byteArray.length / 2; i++) {
+            byte temp = byteArray[i];
+            byteArray[i] = byteArray[byteArray.length - 1 - i];
+            byteArray[byteArray.length - 1 - i] = temp;
+        }
+
+        // Convert the byte array to a long using ByteBuffer
+        ByteBuffer buffer = ByteBuffer.wrap(byteArray);
+        buffer.order(ByteOrder.LITTLE_ENDIAN); // Set little-endian byte order
+        long longValue = buffer.getLong();
+
+        System.out.println("Long Value: " + longValue); // Output: Long Value: 37
+    }
+}
