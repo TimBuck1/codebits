@@ -34,3 +34,31 @@ public class Main {
         return result;
     }
 }
+
+
+import com.example.BInteger; // Import your Protobuf generated classes
+
+public class Main {
+    public static void main(String[] args) {
+        // Assuming bInteger is an instance of BInteger received from Protobuf
+        BInteger bInteger = /* ... */;
+        
+        // Get the value from BInteger as a ByteString
+        ByteString byteString = bInteger.getValue();
+        
+        // Convert the ByteString to a long
+        long longValue = byteArrayToLong(byteString.toByteArray());
+        
+        // Now, longValue contains the long representation of the BInteger
+        System.out.println("Long Value: " + longValue);
+    }
+
+    // Convert a byte array to a long
+    private static long byteArrayToLong(byte[] byteArray) {
+        long value = 0;
+        for (int i = 0; i < byteArray.length; i++) {
+            value = (value << 8) | (byteArray[i] & 0xFF);
+        }
+        return value;
+    }
+}
