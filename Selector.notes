@@ -1,0 +1,218 @@
+
+java
+Copy code
+import java.util.ArrayList;
+import java.util.List;
+
+class AnimalSelector {
+    public static List<String> selectAnimals(List<String> animals) {
+        List<String> selectedAnimals = new ArrayList<>();
+
+        boolean lionSelected = false;
+        boolean tigerSelected = false;
+        boolean goatSelected = false;
+        boolean sheepSelected = false;
+        boolean cowSelected = false;
+        boolean buffaloSelected = false;
+
+        for (String animal : animals) {
+            switch (animal) {
+                case "Lion":
+                    if (!lionSelected) {
+                        selectedAnimals.add(animal);
+                        lionSelected = true;
+                    }
+                    break;
+                case "Tiger":
+                    if (!tigerSelected) {
+                        selectedAnimals.add(animal);
+                        tigerSelected = true;
+                    }
+                    break;
+                case "Goat":
+                    if (!goatSelected) {
+                        selectedAnimals.add(animal);
+                        goatSelected = true;
+                    }
+                    break;
+                case "Sheep":
+                    if (!sheepSelected && goatSelected) {
+                        selectedAnimals.add(animal);
+                        sheepSelected = true;
+                    }
+                    break;
+                case "Cow":
+                    if (!cowSelected) {
+                        selectedAnimals.add(animal);
+                        cowSelected = true;
+                    }
+                    break;
+                case "Buffalo":
+                    if (!buffaloSelected && cowSelected) {
+                        selectedAnimals.add(animal);
+                        buffaloSelected = true;
+                    }
+                    break;
+                default:
+                    // Handle unknown animals or throw an exception if necessary
+                    break;
+            }
+        }
+
+        return selectedAnimals;
+    }
+}
+
+
+java
+Copy code
+import java.util.Arrays;
+import java.util.List;
+
+public class Main {
+    public static void main(String[] args) {
+        List<String> animals = Arrays.asList("Lion", "Tiger", "Goat", "Sheep", "Cow", "Buffalo", "Elephant");
+
+        List<String> selectedAnimals = AnimalSelector.selectAnimals(animals);
+        System.out.println("Selected Animals: " + selectedAnimals);
+    }
+}
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+public class AnimalCombinationChecker {
+
+    public static String checkAnimalCombination(List<String> animals) {
+        Set<String> selectedAnimals = new HashSet<>();
+
+        for (String animal : animals) {
+            if (!isValidAnimal(animal, selectedAnimals)) {
+                return "Illegal combination";
+            }
+            selectedAnimals.add(animal);
+        }
+
+        return "Legal combination";
+    }
+
+    private static boolean isValidAnimal(String animal, Set<String> selectedAnimals) {
+        switch (animal) {
+            case "Lion":
+            case "Tiger":
+                return !selectedAnimals.contains("Lion") && !selectedAnimals.contains("Tiger");
+            case "Goat":
+                return (selectedAnimals.contains("Sheep") && !selectedAnimals.contains("Goat"))
+                        || !selectedAnimals.contains("Goat");
+            case "Sheep":
+                return selectedAnimals.contains("Goat") && !selectedAnimals.contains("Sheep");
+            case "Cow":
+                return (selectedAnimals.contains("Buffalo") && !selectedAnimals.contains("Cow"))
+                        || !selectedAnimals.contains("Cow");
+            case "Buffalo":
+                return selectedAnimals.contains("Cow") && !selectedAnimals.contains("Buffalo");
+            default:
+                return false;
+        }
+    }
+
+    public static void main(String[] args) {
+        List<String> animals1 = List.of("Lion", "Goat", "Sheep", "Buffalo");
+        System.out.println(checkAnimalCombination(animals1)); // Output: Legal combination
+
+        List<String> animals2 = List.of("Lion", "Goat", "Tiger");
+        System.out.println(checkAnimalCombination(animals2)); // Output: Illegal combination
+    }
+}
+import java.util.*;
+
+public class AnimalCombinationChecker {
+
+    private static final Map<String, Set<String>> validCombinations = new HashMap<>();
+    
+    static {
+        validCombinations.put("Lion", new HashSet<>(Arrays.asList("Tiger")));
+        validCombinations.put("Tiger", new HashSet<>(Arrays.asList("Lion")));
+        validCombinations.put("Goat", new HashSet<>(Arrays.asList("Sheep")));
+        validCombinations.put("Sheep", new HashSet<>(Arrays.asList("Goat")));
+        validCombinations.put("Cow", new HashSet<>(Arrays.asList("Buffalo")));
+        validCombinations.put("Buffalo", new HashSet<>(Arrays.asList("Cow")));
+    }
+
+    public static String checkAnimalCombination(List<String> animals) {
+        Set<String> selectedAnimals = new HashSet<>();
+
+        for (String animal : animals) {
+            if (!isValidAnimal(animal, selectedAnimals)) {
+                return "Illegal combination";
+            }
+            selectedAnimals.add(animal);
+        }
+
+        return "Legal combination";
+    }
+
+    private static boolean isValidAnimal(String animal, Set<String> selectedAnimals) {
+        Set<String> validOptions = validCombinations.get(animal);
+        return validOptions == null || validOptions.stream().noneMatch(selectedAnimals::contains);
+    }
+
+    public static void main(String[] args) {
+        List<String> animals1 = List.of("Lion", "Goat", "Sheep", "Buffalo");
+        System.out.println(checkAnimalCombination(animals1)); // Output: Legal combination
+
+        List<String> animals2 = List.of("Lion", "Goat", "Tiger");
+        System.out.println(checkAnimalCombination(animals2)); // Output: Illegal combination
+    }
+}
+
+
+import java.util.*;
+
+public class AnimalCombinationChecker {
+
+    private static final Map<String, Set<String>> validCombinations = new HashMap<>();
+    
+    static {
+        validCombinations.put("Lion", new HashSet<>(Arrays.asList("Tiger")));
+        validCombinations.put("Tiger", new HashSet<>(Arrays.asList("Lion")));
+        validCombinations.put("Goat", new HashSet<>(Arrays.asList("Sheep")));
+        validCombinations.put("Sheep", new HashSet<>(Arrays.asList("Goat")));
+        validCombinations.put("Cow", new HashSet<>(Arrays.asList("Buffalo")));
+        validCombinations.put("Buffalo", new HashSet<>(Arrays.asList("Cow")));
+    }
+
+    public static String checkAnimalCombination(List<String> animals) {
+        if (animals.isEmpty()) {
+            return "Legal combination";
+        }
+
+        Set<String> selectedAnimals = new HashSet<>();
+
+        for (String animal : animals) {
+            if (!isValidAnimal(animal, selectedAnimals)) {
+                return "Illegal combination";
+            }
+            selectedAnimals.add(animal);
+        }
+
+        return "Legal combination";
+    }
+
+    private static boolean isValidAnimal(String animal, Set<String> selectedAnimals) {
+        Set<String> validOptions = validCombinations.get(animal);
+        return validOptions == null || validOptions.stream().noneMatch(selectedAnimals::contains);
+    }
+
+    public static void main(String[] args) {
+        List<String> animals1 = List.of("Lion", "Goat", "Sheep", "Buffalo");
+        System.out.println(checkAnimalCombination(animals1)); // Output: Legal combination
+
+        List<String> animals2 = List.of("Lion", "Goat", "Tiger");
+        System.out.println(checkAnimalCombination(animals2)); // Output: Illegal combination
+        
+        List<String> animals3 = Collections.emptyList();
+        System.out.println(checkAnimalCombination(animals3)); // Output: Legal combination
+    }
+}
