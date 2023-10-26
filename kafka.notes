@@ -1,0 +1,37 @@
+import org.apache.kafka.clients.producer.*;
+
+import java.util.Properties;
+
+public class KafkaProducerExample {
+    public static void main(String[] args) {
+        // Configure producer properties
+        Properties properties = new Properties();
+        properties.put("bootstrap.servers", "localhost:9092");
+        properties.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        properties.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+
+        // Create Kafka producer
+        KafkaProducer<String, String> producer = new KafkaProducer<>(properties);
+
+        // Create a ProducerRecord with topic, key, and value
+        ProducerRecord<String, String> record = new ProducerRecord<>("my-topic", "key", "message");
+
+        // Send the record asynchronously and provide a callback
+        producer.send(record, new Callback() {
+            @Override
+            public void onCompletion(RecordMetadata metadata, Exception exception) {
+                if (exception == null) {
+                    System.out.println("Message sent successfully to topic " + metadata.topic() +
+                            ", partition " + metadata.partition() +
+                            ", offset " + metadata.offset());
+                } else {
+                    System.err.println("Error sending message: " + exception.getMessage());
+                }
+            }
+        });
+
+        // Flush and close the producer
+        producer.flush();
+        producer.close();
+    }
+}
