@@ -1,0 +1,113 @@
+
+package com.infoworld;
+
+import java.util.Random;
+
+public class App {
+  public static void main( String[] args ) {
+    boolean vThreads = args.length > 0;
+    System.out.println( "Using vThreads: " + vThreads);
+
+    long start = System.currentTimeMillis();
+
+    Random random = new Random();
+    Runnable runnable = () -> { double i = random.nextDouble(1000) % random.nextDouble(1000);  };  
+    for (int i = 0; i < 50000; i++){
+      if (vThreads){ 
+        Thread.startVirtualThread(runnable);
+      } else {
+        Thread t = new Thread(runnable);
+        t.start();
+      }
+    }
+   
+    long finish = System.currentTimeMillis();
+    long timeElapsed = finish - start;
+    System.out.println("Run time: " + timeElapsed);
+  }
+}
+
+
+package business;
+
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
+
+class Tax {
+    private int id;
+    private int rootId;
+    private BigDecimal amount;
+    private String group;
+
+    public Tax(int id, int rootId, BigDecimal amount, String group) {
+        this.id = id;
+        this.rootId = rootId;
+        this.amount = amount;
+        this.group = group;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public int getRootId() {
+        return rootId;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public String getGroup() {
+        return group;
+    }
+}
+
+public class TaxCalculator {
+    private Map<Integer, Tax> taxes = new HashMap<>();
+
+    public void addTax(Tax tax) {
+        taxes.put(tax.getId(), tax);
+    }
+
+    public void calculateAmounts() {
+        for (Tax tax : taxes.values()) {
+            int rootId = tax.getRootId();
+            if (rootId != -1) {
+                Tax parentTax = taxes.get(rootId);
+                if (parentTax != null && parentTax.getGroup().equals(tax.getGroup())) {
+                    BigDecimal parentAmount = parentTax.getAmount();
+                    BigDecimal childAmount = tax.getAmount().add(parentAmount);
+                    tax.setAmount(childAmount);
+                }
+            }
+        }
+    }
+
+    public void printTaxAmounts() {
+        for (Tax tax : taxes.values()) {
+            System.out.println("Tax ID: " + tax.getId() + ", Amount: " + tax.getAmount());
+        }
+    }
+
+    public static void main(String[] args) {
+        TaxCalculator taxCalculator = new TaxCalculator();
+
+        // Adding sample taxes
+        taxCalculator.addTax(new Tax(1, -1, new BigDecimal("100.00"), "Payments"));  // Parent tax
+        taxCalculator.addTax(new Tax(1, -1, new BigDecimal("100.00"), "Payments"));  // Parent tax
+        taxCalculator.addTax(new Tax(3, 1, new BigDecimal("25.00"), "Payments"));   
+        taxCalculator.addTax(new Tax(2, 1, new BigDecimal("50.00"), "VAT"));    // Child tax initially with amount 0
+
+        // Calculate amounts
+        taxCalculator.calculateAmounts();
+
+        // Print tax amounts
+        taxCalculator.printTaxAmounts();
+    }
+}
