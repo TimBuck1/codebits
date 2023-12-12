@@ -60,10 +60,50 @@ Replace `"your.package.FileWritingProducerInterceptor"` with the actual package 
 
 Now, whenever you send a message using the Kafka producer, it will be intercepted by `FileWritingProducerInterceptor`, and the message value will be appended to the specified file. Please ensure you handle exceptions and close resources properly in a production-ready implementation.
 
-CREATE SEQUENCE your_sequence_name
-  START WITH 1
-  INCREMENT BY 1
-  MAXVALUE 999999999999999999999999999
-  MINVALUE 1
-  NOCYCLE
-  CACHE 20;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class SequenceGenerator {
+
+    // JDBC URL, username, and password of MySQL server
+    private static final String URL = "jdbc:oracle:thin:@your_database_url";
+    private static final String USER = "your_username";
+    private static final String PASSWORD = "your_password";
+
+    // SQL query to retrieve the next value from the sequence
+    private static final String SQL_QUERY = "SELECT your_sequence_name.NEXTVAL FROM DUAL";
+
+    public static List<Long> generateIds(int count) {
+        List<Long> generatedIds = new ArrayList<>();
+
+        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement statement = connection.prepareStatement(SQL_QUERY);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            for (int i = 0; i < count; i++) {
+                if (resultSet.next()) {
+                    long generatedId = resultSet.getLong(1);
+                    generatedIds.add(generatedId);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return generatedIds;
+    }
+
+    public static void main(String[] args) {
+        int numberOfIdsToGenerate = 5;
+        List<Long> generatedIds = generateIds(numberOfIdsToGenerate);
+
+        // Print the generated IDs
+        System.out.println("Generated IDs: " + generatedIds);
+    }
+}
+
