@@ -162,3 +162,12 @@ WITH RECURSIVE NumberSeries AS (
 )
 SELECT NEXTVAL('your_sequence_name') AS generated_id FROM NumberSeries;
 
+
+WITH RECURSIVE NumberSeries AS (
+  SELECT 1 AS num
+  UNION ALL
+  SELECT num + 1 FROM NumberSeries WHERE num < 5  -- Change 5 to the desired count
+)
+SELECT NEXTVAL('your_sequence_name') AS generated_id FROM NumberSeries;
+
+
