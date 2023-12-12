@@ -59,3 +59,11 @@ KafkaProducer<String, String> producer = new KafkaProducer<>(properties);
 Replace `"your.package.FileWritingProducerInterceptor"` with the actual package name where your `FileWritingProducerInterceptor` class is located.
 
 Now, whenever you send a message using the Kafka producer, it will be intercepted by `FileWritingProducerInterceptor`, and the message value will be appended to the specified file. Please ensure you handle exceptions and close resources properly in a production-ready implementation.
+
+CREATE SEQUENCE your_sequence_name
+  START WITH 1
+  INCREMENT BY 1
+  MAXVALUE 999999999999999999999999999
+  MINVALUE 1
+  NOCYCLE
+  CACHE 20;
