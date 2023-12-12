@@ -107,3 +107,50 @@ public class SequenceGenerator {
     }
 }
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class SequenceGenerator {
+
+    private static final String URL = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1";
+    private static final String USER = "sa";
+    private static final String PASSWORD = "";
+
+    // SQL query to generate a sequence of numbers using H2's ROW_NUMBER() function
+    private static final String SQL_QUERY = "SELECT TOP (?) ROW_NUMBER() OVER () AS row_num FROM INFORMATION_SCHEMA.SYSTEM_USERS";
+
+    public static List<Long> generateIds(int count) {
+        List<Long> generatedIds = new ArrayList<>();
+
+        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement statement = connection.prepareStatement(SQL_QUERY)) {
+
+            statement.setInt(1, count);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    long generatedId = resultSet.getLong("row_num");
+                    generatedIds.add(generatedId);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return generatedIds;
+    }
+
+    public static void main(String[] args) {
+        int numberOfIdsToGenerate = 5;
+        List<Long> generatedIds = generateIds(numberOfIdsToGenerate);
+
+        // Print the generated IDs
+        System.out.println("Generated IDs: " + generatedIds);
+    }
+}
