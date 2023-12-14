@@ -1,13 +1,1 @@
-private static void extracted( BigDecimal value1,BigDecimal value2) {
-
-
-        if ((value1 != null || value2 != null) && !(value1 == null && value2 == null)) {
-            // Either value1 or value2 or both are present
-            System.out.println("At least one value is present.");
-
-            // Your logic here...
-        } else {
-            // Both values are null
-            System.out.println("Error: Both values are null.");
-        }
-    }
+ 
