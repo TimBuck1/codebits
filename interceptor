@@ -1,11 +1,13 @@
-WITH RECURSIVE NumberSeries(NUM) AS (
-  SELECT 1
-  FROM DUAL
-  UNION ALL
-  SELECT NUM + 1
-  FROM NumberSeries
-  WHERE NUM < 5 -- Specify the desired count
-)
+private static void extracted( BigDecimal value1,BigDecimal value2) {
 
-SELECT your_sequence_name.NEXTVAL
-FROM NumberSeries;
+
+        if ((value1 != null || value2 != null) && !(value1 == null && value2 == null)) {
+            // Either value1 or value2 or both are present
+            System.out.println("At least one value is present.");
+
+            // Your logic here...
+        } else {
+            // Both values are null
+            System.out.println("Error: Both values are null.");
+        }
+    }
