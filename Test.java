@@ -22,6 +22,54 @@ public class Main {
             System.out.print(Integer.toBinaryString(b & 255 | 256).substring(1) + " ");
         }
         System.out.println();
+        import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+public class SequenceExample {
+
+    // Replace these with your actual database credentials
+    private static final String DB_URL = "jdbc:oracle:thin:@your_database_host:your_port:your_sid";
+    private static final String USER = "your_username";
+    private static final String PASSWORD = "your_password";
+
+    // Replace with the name of your sequence
+    private static final String SEQUENCE_NAME = "example_sequence";
+
+    public static long getNextSequenceValue() {
+        try (Connection connection = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
+
+            // Prepare a statement to get the next value from the sequence
+            String sql = "SELECT " + SEQUENCE_NAME + ".NEXTVAL FROM DUAL";
+            try (PreparedStatement statement = connection.prepareStatement(sql);
+                 ResultSet resultSet = statement.executeQuery()) {
+
+                if (resultSet.next()) {
+                    // Retrieve and return the next sequence value
+                    return resultSet.getLong(1);
+                }
+
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        // Return a default value or handle the error as needed
+        return -1;
+    }
+
+    public static void main(String[] args) {
+        // Example usage
+        long nextSequenceValue = getNextSequenceValue();
+        System.out.println("Next Sequence Value: " + nextSequenceValue);
+    }
+}
+
     }
 
     // Convert a long value to a byte array
