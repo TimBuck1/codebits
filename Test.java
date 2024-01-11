@@ -133,4 +133,19 @@ public class Main {
 
         System.out.println("Long Value: " + longValue); // Output: Long Value: 37
     }
+    public class YourPojo {
+
+    // ... other fields, getters, setters
+
+    public boolean areFieldsDifferent(YourPojo other) {
+        // Compare each relevant field individually
+        if (field1 != null ? !field1.equals(other.field1) : other.field1 != null) return true;
+        if (field2 != null ? !field2.equals(other.field2) : other.field2 != null) return true;
+        // Repeat for other fields...
+
+        // All relevant fields are the same
+        return false;
+    }
+}
+
 }
