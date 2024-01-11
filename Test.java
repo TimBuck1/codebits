@@ -147,5 +147,38 @@ public class Main {
         return false;
     }
 }
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+public class YourPojo {
+
+    private Map<String, String> yourHashMap;
+
+    // ... other fields, getters, setters
+
+    public boolean areHashMapValuesDifferent(YourPojo other) {
+        Map<String, String> otherHashMap = other.getYourHashMap();
+
+        // If sizes are different, the values are definitely different
+        if (yourHashMap.size() != otherHashMap.size()) {
+            return true;
+        }
+
+        // Compare values for each key
+        for (Map.Entry<String, String> entry : yourHashMap.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+
+            // Check if the other map contains the same key and value
+            if (!otherHashMap.containsKey(key) || !Objects.equals(value, otherHashMap.get(key))) {
+                return true;
+            }
+        }
+
+        // All values are the same
+        return false;
+    }
+}
 
 }
