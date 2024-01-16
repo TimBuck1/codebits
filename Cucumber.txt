@@ -1,68 +1,23 @@
-import io.cucumber.core.gherkin.Pickle;
-import io.cucumber.core.gherkin.PickleWrapper;
-import io.cucumber.core.gherkin.Scenario;
-import io.cucumber.core.gherkin.parser.Parser;
-import io.cucumber.core.gherkin.vintage.GherkinVintage;
+<dependencies>
+    <!-- Cucumber dependencies -->
+    <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>cucumber-java</artifactId>
+        <version>6.11.0</version> <!-- Use the version appropriate for your project -->
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>cucumber-junit</artifactId>
+        <version>6.11.0</version> <!-- Use the version appropriate for your project -->
+        <scope>test</scope>
+    </dependency>
+</dependencies>
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.List;
 
-public class FeatureFileReader {
-
-    public static void main(String[] args) {
-        // Provide the path to the directory containing your feature files
-        String featureFilesDirectory = "src/test/resources/features";
-
-        // Read feature files and push data to the main database
-        readFeatureFilesAndPushData(featureFilesDirectory);
-    }
-
-    private static void readFeatureFilesAndPushData(String featureFilesDirectory) {
-        try {
-            // Get all feature files in the directory
-            List<File> featureFiles = getAllFeatureFiles(new File(featureFilesDirectory));
-
-            // Iterate through each feature file
-            for (File featureFile : featureFiles) {
-                // Read the feature file content
-                String featureFileContent = new String(Files.readAllBytes(featureFile.toPath()));
-
-                // Parse the feature file using Cucumber's Gherkin parser
-                List<Pickle> pickles = parseFeatureFile(featureFileContent);
-
-                // Process each scenario in the feature file
-                for (Pickle pickle : pickles) {
-                    // Extract scenario data and push it to the main database
-                    pushScenarioDataToMainDatabase(pickle);
-                }
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static List<File> getAllFeatureFiles(File directory) {
-        // Implement logic to recursively get all feature files in the directory
-        // You can use libraries like Apache Commons IO or java.nio.file
-        // Example:
-        // File[] files = FileUtils.listFiles(directory, new String[]{"feature"}, true);
-        // return Arrays.asList(files);
-        return List.of();
-    }
-
-    private static List<Pickle> parseFeatureFile(String featureFileContent) {
-        // Use Cucumber's Gherkin parser to parse the feature file content
-        GherkinVintage gherkinParser = new GherkinVintage();
-        Parser<Scenario> parser = gherkinParser.parser(Scenario.class);
-        return parser.parse(new PickleWrapper(featureFileContent));
-    }
-
-    private static void pushScenarioDataToMainDatabase(Pickle pickle) {
-        // Implement logic to push scenario data to the main database
-        // You can use your existing database interaction code here
-        // Example: YourDatabaseClass.insertData(pickle.getSteps());
-    }
-}
+<dependency>
+    <groupId>io.cucumber</groupId>
+    <artifactId>gherkin</artifactId>
+    <version>17.0.0</version> <!-- Use the version appropriate for your project -->
+    <scope>test</scope>
+</dependency>
