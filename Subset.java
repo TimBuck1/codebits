@@ -26,3 +26,32 @@ Enter file contents here
         }
     }
 }
+import java.util.*;
+
+public class RandomMapEntryPicker {
+    public static void main(String[] args) {
+        Map<String, String> animalCategoryMap = new HashMap<>();
+        animalCategoryMap.put("Cat", "Mammal");
+        animalCategoryMap.put("Dog", "Mammal");
+        animalCategoryMap.put("Fish", "Aquatic");
+        animalCategoryMap.put("Bird", "Avian");
+
+        Map.Entry<String, String> randomEntry = getRandomEntry(animalCategoryMap);
+
+        if (randomEntry != null) {
+            System.out.println("Random Entry: " + randomEntry.getKey() + " -> " + randomEntry.getValue());
+        } else {
+            System.out.println("The map is empty");
+        }
+    }
+
+    private static <K, V> Map.Entry<K, V> getRandomEntry(Map<K, V> map) {
+        List<Map.Entry<K, V>> entryList = new ArrayList<>(map.entrySet());
+        if (!entryList.isEmpty()) {
+            Random random = new Random();
+            int randomIndex = random.nextInt(entryList.size());
+            return entryList.get(randomIndex);
+        }
+        return null;
+    }
+}
