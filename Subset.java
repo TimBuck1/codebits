@@ -1,26 +1,21 @@
-import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.Random;
 
-public class RandomBigDecimalGenerator {
+public class RandomLocalDateGenerator {
     public static void main(String[] args) {
-        BigDecimal minValue = new BigDecimal("10.0");
-        BigDecimal maxValue = new BigDecimal("20.0");
+        LocalDate today = LocalDate.now();
+        int yearRange = 5; // Change this to your desired year range
 
-        BigDecimal randomBigDecimal = getRandomBigDecimalInRange(minValue, maxValue);
-        System.out.println("Random BigDecimal: " + randomBigDecimal);
+        LocalDate randomDate = getRandomLocalDateAfterToday(today, yearRange);
+        System.out.println("Random LocalDate: " + randomDate);
     }
 
-    private static BigDecimal getRandomBigDecimalInRange(BigDecimal minValue, BigDecimal maxValue) {
-        if (minValue.compareTo(maxValue) >= 0) {
-            throw new IllegalArgumentException("Invalid range: minValue must be less than maxValue");
-        }
-
+    private static LocalDate getRandomLocalDateAfterToday(LocalDate today, int yearRange) {
         Random random = new Random();
-        BigDecimal randomBigDecimal = maxValue.subtract(minValue).multiply(new BigDecimal(random.nextDouble()))
-                .add(minValue);
+        int randomYear = today.getYear() + random.nextInt(yearRange + 1);
+        int randomMonth = random.nextInt(12) + 1; // Month ranges from 1 to 12
+        int randomDay = random.nextInt(today.lengthOfMonth()) + 1; // Day ranges from 1 to the length of the month
 
-        // Optionally, you can round the result based on your requirements
-        return randomBigDecimal.setScale(2, RoundingMode.HALF_UP);
+        return LocalDate.of(randomYear, randomMonth, randomDay);
     }
 }
