@@ -1,17 +1,14 @@
-import org.springframework.stereotype.Service;
-import java.util.concurrent.atomic.AtomicBoolean;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-@Service
-public class MyService {
+@RestController
+public class MyController {
 
-    private AtomicBoolean methodCalled = new AtomicBoolean(false);
-
-    public String restrictedMethod() {
-        if (methodCalled.compareAndSet(false, true)) {
-            // Your logic for the method goes here
-            return "Method called successfully.";
-        } else {
-            return "Method has already been called and cannot be called again.";
-        }
+    @GetMapping("/example")
+    public String exampleWithPathVariable(
+            @RequestParam(name = "id", required = false, defaultValue = "defaultId") String id) {
+        // Your logic here using the "id" variable
+        return "Received id: " + id;
     }
 }
