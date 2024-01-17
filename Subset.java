@@ -1,21 +1,17 @@
-import java.time.LocalDate;
-import java.util.Random;
+import org.springframework.stereotype.Service;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-public class RandomLocalDateGenerator {
-    public static void main(String[] args) {
-        LocalDate today = LocalDate.now();
-        int yearRange = 5; // Change this to your desired year range
+@Service
+public class MyService {
 
-        LocalDate randomDate = getRandomLocalDateAfterToday(today, yearRange);
-        System.out.println("Random LocalDate: " + randomDate);
-    }
+    private AtomicBoolean methodCalled = new AtomicBoolean(false);
 
-    private static LocalDate getRandomLocalDateAfterToday(LocalDate today, int yearRange) {
-        Random random = new Random();
-        int randomYear = today.getYear() + random.nextInt(yearRange + 1);
-        int randomMonth = random.nextInt(12) + 1; // Month ranges from 1 to 12
-        int randomDay = random.nextInt(today.lengthOfMonth()) + 1; // Day ranges from 1 to the length of the month
-
-        return LocalDate.of(randomYear, randomMonth, randomDay);
+    public String restrictedMethod() {
+        if (methodCalled.compareAndSet(false, true)) {
+            // Your logic for the method goes here
+            return "Method called successfully.";
+        } else {
+            return "Method has already been called and cannot be called again.";
+        }
     }
 }
