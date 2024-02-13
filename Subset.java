@@ -20,6 +20,14 @@ class DataObject {
         return value;
     }
 
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public Integer getRate() {
+        return rate;
+    }
+
     public List<DataObject> getChildren() {
         return children;
     }
@@ -85,7 +93,6 @@ public class ParentChildExample {
             } else if (value == null && quantity == null && rate != null) {
                 // This row has the last field populated and others as null, it's the unlimited band parent
                 unlimitedBandParent = new DataObject(null, null, rate);
-                result.add(unlimitedBandParent);
             }
         }
 
