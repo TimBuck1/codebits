@@ -66,18 +66,17 @@ public class ParentChildExample {
             Integer quantity = (row.length > 1) ? (Integer) row[1] : null;
             Integer rate = (row.length > 2) ? (Integer) row[2] : null;
 
-            if (quantity == null && rate == null) {
+            DataObject parent = valueToParentMap.get(value);
+
+            if (parent == null) {
                 // This row has only the first field populated, so it's a new parent
-                DataObject parent = new DataObject(value, null, null);
+                parent = new DataObject(value, quantity, rate);
                 valueToParentMap.put(value, parent);
                 result.add(parent);
-            } else {
+            } else if (quantity != null && rate != null) {
                 // This row has all three fields populated, it's a child of the corresponding parent
-                DataObject parent = valueToParentMap.get(value);
-                if (parent != null) {
-                    DataObject child = new DataObject(value, quantity, rate);
-                    parent.addChild(child);
-                }
+                DataObject child = new DataObject(value, quantity, rate);
+                parent.addChild(child);
             }
         }
 
