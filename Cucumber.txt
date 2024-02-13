@@ -1,23 +1,38 @@
-<dependencies>
-    <!-- Cucumber dependencies -->
-    <dependency>
-        <groupId>io.cucumber</groupId>
-        <artifactId>cucumber-java</artifactId>
-        <version>6.11.0</version> <!-- Use the version appropriate for your project -->
-        <scope>test</scope>
-    </dependency>
-    <dependency>
-        <groupId>io.cucumber</groupId>
-        <artifactId>cucumber-junit</artifactId>
-        <version>6.11.0</version> <!-- Use the version appropriate for your project -->
-        <scope>test</scope>
-    </dependency>
-</dependencies>
+import java.util.ArrayList;
+import java.util.List;
 
+public class CyclicElementProvider<T> {
+    private final List<T> elements;
+    private int currentIndex;
 
-<dependency>
-    <groupId>io.cucumber</groupId>
-    <artifactId>gherkin</artifactId>
-    <version>17.0.0</version> <!-- Use the version appropriate for your project -->
-    <scope>test</scope>
-</dependency>
+    public CyclicElementProvider(List<T> elements) {
+        if (elements == null || elements.isEmpty()) {
+            throw new IllegalArgumentException("Elements list must not be null or empty.");
+        }
+
+        this.elements = new ArrayList<>(elements);
+        this.currentIndex = 0;
+    }
+
+    public T getNextElement() {
+        if (elements.isEmpty()) {
+            throw new IllegalStateException("Elements list is empty.");
+        }
+
+        T nextElement = elements.get(currentIndex);
+        currentIndex = (currentIndex + 1) % elements.size();
+        return nextElement;
+    }
+
+    public static void main(String[] args) {
+        List<String> elements = List.of("Element 1", "Element 2", "Element 3", "Element 4");
+
+        CyclicElementProvider<String> cyclicElementProvider = new CyclicElementProvider<>(elements);
+
+        // Requests
+        for (int i = 1; i <= 10; i++) {
+            String nextElement = cyclicElementProvider.getNextElement();
+            System.out.println("Request " + i + ": " + nextElement);
+        }
+    }
+}
