@@ -1,4 +1,6 @@
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +70,9 @@ public class ParentChildExample {
     }
 
     private static List<DataObject> organizeData(List<Object[]> rawData) {
+        // Sort the data by the value, so parents appear before children
+        Collections.sort(rawData, Comparator.comparing(row -> String.valueOf(row[0])));
+
         List<DataObject> result = new ArrayList<>();
         Map<String, DataObject> valueToParentMap = new HashMap<>();
         DataObject unlimitedBandParent = null;
