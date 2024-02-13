@@ -89,6 +89,15 @@ public class ParentChildExample {
             }
         }
 
+        // If there is an unlimitedBandParent, add it as a child to parents with null as the second field
+        if (unlimitedBandParent != null) {
+            for (DataObject parent : result) {
+                if (parent.getValue() == null && parent.getQuantity() == null) {
+                    parent.addChild(unlimitedBandParent);
+                }
+            }
+        }
+
         return result;
     }
 }
