@@ -1,3 +1,4 @@
+import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
@@ -6,13 +7,13 @@ public class CustomObjectExample {
     public static void main(String[] args) {
         // Sample class for demonstration
         class CustomObject {
-            private Long value;
+            private BigDecimal value;
 
-            public CustomObject(Long value) {
+            public CustomObject(BigDecimal value) {
                 this.value = value;
             }
 
-            public Long getValue() {
+            public BigDecimal getValue() {
                 return value;
             }
 
@@ -27,23 +28,23 @@ public class CustomObjectExample {
         // Creating a set of CustomObjects
         Set<CustomObject> customObjects = new TreeSet<>(new TreeSetComparator());
 
-        // Adding objects with Long.MAX_VALUE
-        customObjects.add(new CustomObject(42L));
-        customObjects.add(new CustomObject(Long.MAX_VALUE));
-        customObjects.add(new CustomObject(123L));
-        customObjects.add(new CustomObject(Long.MAX_VALUE));
+        // Adding objects with BigDecimal values
+        customObjects.add(new CustomObject(new BigDecimal("42.42")));
+        customObjects.add(new CustomObject(BigDecimal.ONE));
+        customObjects.add(new CustomObject(new BigDecimal("123.456")));
+        customObjects.add(new CustomObject(BigDecimal.TEN));
 
         // Printing the set
         System.out.println("Set of CustomObjects: " + customObjects);
     }
 
-    // Custom comparator for sorting based on Long values
+    // Custom comparator for sorting based on BigDecimal values
     static class TreeSetComparator implements Comparator<CustomObject> {
         @Override
         public int compare(CustomObject o1, CustomObject o2) {
-            if (o1.getValue().equals(Long.MAX_VALUE)) {
+            if (o1.getValue().equals(BigDecimal.valueOf(Long.MAX_VALUE))) {
                 return 1; // o1 comes after o2
-            } else if (o2.getValue().equals(Long.MAX_VALUE)) {
+            } else if (o2.getValue().equals(BigDecimal.valueOf(Long.MAX_VALUE))) {
                 return -1; // o1 comes before o2
             } else {
                 return o1.getValue().compareTo(o2.getValue());
