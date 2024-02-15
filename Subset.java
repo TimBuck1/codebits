@@ -1,76 +1,55 @@
-import java.math.BigDecimal;
-import java.util.*;
+import java.util.Comparator;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class CustomObjectExample {
     public static void main(String[] args) {
         // Sample class for demonstration
         class CustomObject {
-            private BigDecimal amount;
-            private BigDecimal rate;
+            private Long value;
 
-            public CustomObject(BigDecimal amount, BigDecimal rate) {
-                this.amount = amount;
-                this.rate = rate;
+            public CustomObject(Long value) {
+                this.value = value;
             }
 
-            public BigDecimal getAmount() {
-                return amount;
-            }
-
-            public BigDecimal getRate() {
-                return rate;
+            public Long getValue() {
+                return value;
             }
 
             @Override
             public String toString() {
                 return "CustomObject{" +
-                        "amount=" + amount +
-                        ", rate=" + rate +
+                        "value=" + value +
                         '}';
             }
         }
 
-        // Creating a list of CustomObjects
-        List<CustomObject> customObjects = Arrays.asList(
-                new CustomObject(null, new BigDecimal("5.0")),
-                new CustomObject(new BigDecimal("1000.0"), new BigDecimal("4.0")),
-                new CustomObject(new BigDecimal("20.0"), new BigDecimal("1.0")),
-                new CustomObject(new BigDecimal("30.0"), new BigDecimal("2.0")),
-                new CustomObject(null, new BigDecimal("4.0"))
-        );
+        // Creating a set of CustomObjects
+        Set<CustomObject> customObjects = new TreeSet<>(new TreeSetComparator());
 
-        // Custom comparator for sorting based on rate and then amount
-        Comparator<CustomObject> customComparator = Comparator
-                .comparing(CustomObject::getRate, Comparator.nullsFirst(Comparator.naturalOrder()))
-                .thenComparing(CustomObject::getAmount, Comparator.nullsFirst(Comparator.naturalOrder()));
+        // Adding objects with Long.MAX_VALUE
+        customObjects.add(new CustomObject(42L));
+        customObjects.add(new CustomObject(Long.MAX_VALUE));
+        customObjects.add(new CustomObject(123L));
+        customObjects.add(new CustomObject(Long.MAX_VALUE));
 
-        // Creating a custom TreeSet with a custom comparator and custom equality check
-        TreeSet<CustomObject> customObjectTreeSet = new TreeSet<>(new TreeSetComparator<>(customComparator));
-
-        // Adding all elements from the list to the TreeSet
-        customObjectTreeSet.addAll(customObjects);
-
-        // Printing the sorted list and TreeSet
-        System.out.println("Sorted List: " + customObjects);
-        System.out.println("TreeSet: " + customObjectTreeSet);
+        // Printing the set
+        System.out.println("Set of CustomObjects: " + customObjects);
     }
 
-    // Custom TreeSetComparator to handle equality for objects with null fields
-    static class TreeSetComparator<T> implements Comparator<T> {
-        private final Comparator<T> comparator;
-
-        TreeSetComparator(Comparator<T> comparator) {
-            this.comparator = comparator;
+    // Custom comparator for sorting based on Long values
+    static class TreeSetComparator implements Comparator<CustomObject> {
+        @Override
+        public int compare(CustomObject o1, CustomObject o2) {
+            // Custom comparison logic
+            return Long.compare(o1.getValue(), o2.getValue());
         }
 
         @Override
-        public int compare(T o1, T o2) {
-            int result = comparator.compare(o1, o2);
-            if (result == 0 && !Objects.equals(o1, o2)) {
-                // Custom equality check for null fields
-                return 1;
-            }
-            return result;
+        public boolean equals(Object obj) {
+            // Custom equality check to treat Long.MAX_VALUE as distinct
+            return this == obj || obj != null && getClass() == obj.getClass();
         }
     }
 }
