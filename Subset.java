@@ -1,5 +1,4 @@
 import java.util.Comparator;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -42,14 +41,19 @@ public class CustomObjectExample {
     static class TreeSetComparator implements Comparator<CustomObject> {
         @Override
         public int compare(CustomObject o1, CustomObject o2) {
-            // Custom comparison logic
-            return Long.compare(o1.getValue(), o2.getValue());
+            if (o1.getValue().equals(Long.MAX_VALUE)) {
+                return 1; // o1 comes after o2
+            } else if (o2.getValue().equals(Long.MAX_VALUE)) {
+                return -1; // o1 comes before o2
+            } else {
+                return o1.getValue().compareTo(o2.getValue());
+            }
         }
 
         @Override
         public boolean equals(Object obj) {
-            // Custom equality check to treat Long.MAX_VALUE as distinct
-            return this == obj || obj != null && getClass() == obj.getClass();
+            // Always treat objects as distinct
+            return false;
         }
     }
 }
