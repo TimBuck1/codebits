@@ -1,10 +1,10 @@
 .sorted(Map.Entry.comparingByValue(
-    Comparator.comparing(entry -> 
-        entry.getValue().stream()
-            .filter(Objects::nonNull) // Filter out null values
-            .min(Comparator.comparing(YourObject::getUpperBand))
-            .map(YourObject::getUpperBand)
-            .orElse(null),
-        Comparator.nullsLast(Comparator.naturalOrder())
-    )
+    Comparator.comparing(entry -> {
+        List<YourObject> objects = entry.getValue();
+        return objects.stream()
+                .filter(Objects::nonNull)
+                .min(Comparator.comparing(YourObject::getUpperBand, Comparator.nullsLast(Comparator.naturalOrder())))
+                .map(YourObject::getUpperBand)
+                .orElse(null);
+    }, Comparator.nullsLast(Comparator.naturalOrder()))
 ))
