@@ -1,11 +1,9 @@
 import java.math.BigDecimal;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class YourObject {
-    private String id;
+    private Long id;
     private BigDecimal upperBand;
 
     // Constructors, getters, setters, etc.
@@ -13,21 +11,19 @@ public class YourObject {
     public static void main(String[] args) {
         List<YourObject> yourObjects = getListOfYourObjects(); // Replace with your actual list
 
-        Map<String, List<YourObject>> groupedAndSortedMap = yourObjects.stream()
+        Map<Long, List<YourObject>> groupedAndSortedMap = yourObjects.stream()
                 .collect(Collectors.groupingBy(
                         YourObject::getId,
-                        Collectors.mapping(
-                                YourObject::getUpperBand,
-                                Collectors.maxBy(Comparator.naturalOrder())
+                        Collectors.collectingAndThen(
+                                Collectors.maxBy(Comparator.comparing(YourObject::getUpperBand)),
+                                optional -> optional.map(Collections::singletonList).orElse(Collections.emptyList())
                         )
                 ))
                 .entrySet().stream()
-                .sorted(Map.Entry.comparingByValue(Comparator.nullsLast(Comparator.naturalOrder())))
+                .sorted(Map.Entry.comparingByValue(Comparator.comparing(entry -> entry.getValue().get(0).getUpperBand())))
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
-                        entry -> yourObjects.stream()
-                                .filter(obj -> obj.getId().equals(entry.getKey()))
-                                .collect(Collectors.toList()),
+                        Map.Entry::getValue,
                         (e1, e2) -> e1,
                         LinkedHashMap::new
                 ));
