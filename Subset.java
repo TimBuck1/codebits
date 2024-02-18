@@ -1,52 +1,51 @@
-Map<IdUpperBandKey, List<YourObject>> groupedAndSortedMap = yourObjects.stream()
-        .collect(Collectors.groupingBy(
-                obj -> new IdUpperBandKey(obj.getId(), obj.getUpperBand())
-        ))
-        .entrySet().stream()
-        .sorted(Map.Entry.comparingByValue(
-                Comparator.comparing(objList -> objList.get(0).getUpperBand(), Comparator.nullsLast(Comparator.naturalOrder()))
-        ))
-        .collect(Collectors.toMap(
-                Map.Entry::getKey,
-                Map.Entry::getValue,
-                (e1, e2) -> e1,
-                LinkedHashMap::new
-        ));
-
-
-
-
 import java.math.BigDecimal;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
-class IdUpperBandKey {
-    private final Long id;
-    private final BigDecimal upperBand;
+public class UpperBandMapExample {
 
-    public IdUpperBandKey(Long id, BigDecimal upperBand) {
-        this.id = id;
-        this.upperBand = upperBand;
+    public static void main(String[] args) {
+        Map<Long, List<YourObject>> originalMap = getOriginalMap(); // Replace with your actual map
+
+        Map<BigDecimal, List<YourObject>> result = originalMap.values().stream()
+                .filter(list -> list.size() == 1)
+                .map(list -> list.get(0))
+                .collect(Collectors.toMap(
+                        obj -> obj.getUpperBand() != null ? obj.getUpperBand() : BigDecimal.ZERO, // Default to BigDecimal.ZERO if null
+                        Collections::singletonList,
+                        // No merge function needed, as lists with a size of 1 won't have duplicates
+                        LinkedHashMap::new // Maintain insertion order
+                ));
+
+        // Print the result map
+        result.forEach((upperBand, objectsList) ->
+                System.out.println("UpperBand: " + upperBand + ", Objects: " + objectsList)
+        );
     }
 
-    public Long getId() {
-        return id;
+    // Other methods...
+
+    // Replace this method with your actual data source
+    private static Map<Long, List<YourObject>> getOriginalMap() {
+        // Implementation to create and return a map of Long to List<YourObject>
+        return Map.of(
+                1L, List.of(new YourObject(BigDecimal.valueOf(10.5))),
+                2L, List.of(new YourObject(BigDecimal.valueOf(15.2))),
+                3L, List.of(new YourObject((BigDecimal) null)),
+                4L, List.of(new YourObject(BigDecimal.valueOf(12.8))),
+                5L, List.of(new YourObject((BigDecimal) null))
+        );
     }
 
-    public BigDecimal getUpperBand() {
-        return upperBand;
-    }
+    static class YourObject {
+        private final BigDecimal upperBand;
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        IdUpperBandKey that = (IdUpperBandKey) o;
-        return Objects.equals(id, that.id) &&
-                Objects.equals(upperBand, that.upperBand);
-    }
+        public YourObject(BigDecimal upperBand) {
+            this.upperBand = upperBand;
+        }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, upperBand);
+        public BigDecimal getUpperBand() {
+            return upperBand;
+        }
     }
 }
