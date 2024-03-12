@@ -1,38 +1,46 @@
-import java.util.ArrayList;
-import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
 
-public class CyclicElementProvider<T> {
-    private final List<T> elements;
-    private int currentIndex;
+@WebFluxTest(YourController.class)
+public class YourControllerTest {
 
-    public CyclicElementProvider(List<T> elements) {
-        if (elements == null || elements.isEmpty()) {
-            throw new IllegalArgumentException("Elements list must not be null or empty.");
-        }
+    @Autowired
+    private WebTestClient webTestClient;
 
-        this.elements = new ArrayList<>(elements);
-        this.currentIndex = 0;
-    }
+    @Autowired
+    private YourController yourController; // Inject the controller directly
 
-    public T getNextElement() {
-        if (elements.isEmpty()) {
-            throw new IllegalStateException("Elements list is empty.");
-        }
+    @Test
+    void testSaveMethod() {
+        // Mock any necessary dependencies
 
-        T nextElement = elements.get(currentIndex);
-        currentIndex = (currentIndex + 1) % elements.size();
-        return nextElement;
-    }
+        // Define your DTO
+        YourDto dto = new YourDto(/* initialize with relevant data */);
 
-    public static void main(String[] args) {
-        List<String> elements = List.of("Element 1", "Element 2", "Element 3", "Element 4");
+        // Invoke the save method directly
+        Mono<ResponseEntity<YourResponseDto>> responseMono = yourController.save(dto);
 
-        CyclicElementProvider<String> cyclicElementProvider = new CyclicElementProvider<>(elements);
-
-        // Requests
-        for (int i = 1; i <= 10; i++) {
-            String nextElement = cyclicElementProvider.getNextElement();
-            System.out.println("Request " + i + ": " + nextElement);
-        }
+        // Verify the response body
+        webTestClient
+                .mutateWith(csrf()) // If CSRF protection is enabled
+                .post()
+                .uri("/api/save") // Adjust the URI if needed
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(dto)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(YourResponseDto.class) // Adjust the expected response type
+                .consumeWith(response -> {
+                    YourResponseDto responseBody = response.getResponseBody();
+                    // Add assertions based on your expected response
+                    // For example:
+                    assertThat(responseBody.getId()).isNotNull();
+                    assertThat(responseBody.getMessage()).isEqualTo("Saved successfully");
+                });
     }
 }
