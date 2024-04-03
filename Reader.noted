@@ -1,6 +1,3 @@
-SELECT 
-    CONCAT(field1, '-', field2, '-', field3, '-', field4) AS concatenated_fields
-FROM 
-    your_table
-WHERE 
-    your_condition;
+SELECT field1 || '-' || field2 || '-' || field3 || '-' || field4 AS concatenated_fields
+FROM your_table
+WHERE your_condition;
