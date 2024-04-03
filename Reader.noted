@@ -1,3 +1,27 @@
-SELECT field1 || '-' || field2 || '-' || field3 || '-' || field4 AS concatenated_fields
-FROM your_table
-WHERE your_condition;
+import java.util.List;
+import java.util.Set;
+
+public class Main {
+    public static void main(String[] args) {
+        // Sample list of employees
+        List<Employee> employees = ...; // Initialize the list with your employees
+
+        // Sample set of first name + last name strings
+        Set<String> namesToRemove = ...; // Initialize the set with the names to be removed
+
+        // Remove employees based on first name + last name
+        employees.removeIf(employee -> namesToRemove.contains(employee.getFirstName() + employee.getLastName()));
+
+        // Print remaining employees
+        for (Employee employee : employees) {
+            System.out.println(employee);
+        }
+    }
+}
+
+class Employee {
+    private String firstName;
+    private String lastName;
+
+    // Constructor, getters, setters
+}
