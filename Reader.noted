@@ -1,38 +1,6 @@
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import com.google.protobuf.util.JsonFormat;
-import your_package_name.YourProtobufMessage;
-
-public class ProtobufFileReader {
-
-    public static List<YourProtobufMessage> readProtobufMessagesFromFile(String filePath) throws Exception {
-        List<YourProtobufMessage> protobufMessages = new ArrayList<>();
-        
-        // Read lines from the file
-        List<String> lines = Files.readAllLines(Path.of(filePath));
-
-        // Parse each line as a Protobuf message and add it to the list
-        for (String line : lines) {
-            YourProtobufMessage.Builder builder = YourProtobufMessage.newBuilder();
-            JsonFormat.parser().ignoringUnknownFields().merge(line, builder);
-            YourProtobufMessage protobufMessage = builder.build();
-            protobufMessages.add(protobufMessage);
-        }
-        
-        return protobufMessages;
-    }
-
-    public static void main(String[] args) {
-        String filePath = "path/to/your/protobuf_file.txt";
-        try {
-            List<YourProtobufMessage> protobufMessages = readProtobufMessagesFromFile(filePath);
-            for (YourProtobufMessage message : protobufMessages) {
-                System.out.println("Parsed Protobuf Message: " + message.toString());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-}
+SELECT 
+    CONCAT(field1, '-', field2, '-', field3, '-', field4) AS concatenated_fields
+FROM 
+    your_table
+WHERE 
+    your_condition;
