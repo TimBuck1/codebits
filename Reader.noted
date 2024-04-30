@@ -1,3 +1,32 @@
-SELECT CONCAT_WS('-', field1, field2, field3, field4) AS concatenated_fields
-FROM your_table
-WHERE your_condition;
+SELECT 
+    main.orderid,
+    main.total_fees,
+    COALESCE(fee1.fee_amount, 0) AS fee_amount,
+    NULL AS fee_id
+FROM (
+    SELECT 
+        orderid,
+        SUM(fee_amount) AS total_fees
+    FROM 
+        fee
+    GROUP BY 
+        orderid
+) main
+LEFT JOIN 
+    fee fee1 ON main.orderid = fee1.orderid
+LEFT JOIN 
+    fee fee2 ON main.orderid = fee2.orderid AND fee1.fee_id < fee2.fee_id
+
+UNION ALL
+
+SELECT 
+    orderid,
+    NULL AS total_fees,
+    fee_amount,
+    fee_id
+FROM 
+    fee
+WHERE 
+    orderid IN (SELECT orderid FROM fee GROUP BY orderid HAVING COUNT(*) > 1)
+ORDER BY 
+    orderid;
