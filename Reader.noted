@@ -1,8 +1,8 @@
 SELECT 
     main.orderid,
     main.total_fees,
-    COALESCE((SELECT fee_amount FROM fee WHERE orderid = main.orderid AND fee_id = 1), 0) AS fee1_amount,
-    COALESCE((SELECT fee_amount FROM fee WHERE orderid = main.orderid AND fee_id = 2), 0) AS fee2_amount
+    COALESCE(MAX(CASE WHEN fee.fee_id = 1 THEN fee.fee_amount END), 0) AS fee1_amount,
+    COALESCE(MAX(CASE WHEN fee.fee_id = 2 THEN fee.fee_amount END), 0) AS fee2_amount
 FROM (
     SELECT 
         orderid,
@@ -12,3 +12,7 @@ FROM (
     GROUP BY 
         orderid
 ) main
+LEFT JOIN 
+    fee ON main.orderid = fee.orderid
+GROUP BY
+    main.orderid, main.total_fees
