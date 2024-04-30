@@ -1,8 +1,8 @@
 SELECT 
     main.orderid,
     main.total_fees,
-    COALESCE(fee1.fee_amount, 0) AS fee_amount,
-    NULL AS fee_id
+    COALESCE((SELECT fee_amount FROM fee WHERE orderid = main.orderid AND fee_id = 1), 0) AS fee1_amount,
+    COALESCE((SELECT fee_amount FROM fee WHERE orderid = main.orderid AND fee_id = 2), 0) AS fee2_amount
 FROM (
     SELECT 
         orderid,
@@ -12,21 +12,3 @@ FROM (
     GROUP BY 
         orderid
 ) main
-LEFT JOIN 
-    fee fee1 ON main.orderid = fee1.orderid
-LEFT JOIN 
-    fee fee2 ON main.orderid = fee2.orderid AND fee1.fee_id < fee2.fee_id
-
-UNION ALL
-
-SELECT 
-    orderid,
-    NULL AS total_fees,
-    fee_amount,
-    fee_id
-FROM 
-    fee
-WHERE 
-    orderid IN (SELECT orderid FROM fee GROUP BY orderid HAVING COUNT(*) > 1)
-ORDER BY 
-    orderid;
