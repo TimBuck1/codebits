@@ -1,18 +1,39 @@
+-- DDL for creating the student table
+CREATE TABLE student (
+    StudentId INT PRIMARY KEY,
+    StudentName VARCHAR(50)
+);
+
+-- DDL for creating the fees table
+CREATE TABLE fees (
+    FeeId INT PRIMARY KEY,
+    StudentId INT,
+    FeeAmount DECIMAL(10, 2),
+    CONSTRAINT fk_student FOREIGN KEY (StudentId) REFERENCES student(StudentId)
+);
+
+-- Sample data queries to fill the tables
+INSERT INTO student (StudentId, StudentName) VALUES (1, 'Alice');
+INSERT INTO student (StudentId, StudentName) VALUES (2, 'Bob');
+
+INSERT INTO fees (FeeId, StudentId, FeeAmount) VALUES (1, 1, 100.00);
+INSERT INTO fees (FeeId, StudentId, FeeAmount) VALUES (2, 1, 50.00);
+INSERT INTO fees (FeeId, StudentId, FeeAmount) VALUES (3, 2, 75.00);
+
+
 SELECT 
-    main.orderid,
-    main.total_fees,
-    COALESCE(MAX(CASE WHEN fee.fee_id = 1 THEN fee.fee_amount END), 0) AS fee1_amount,
-    COALESCE(MAX(CASE WHEN fee.fee_id = 2 THEN fee.fee_amount END), 0) AS fee2_amount
-FROM (
+    fees.StudentId,
+    total.TotalFees,
+    fees.FeeId,
+    fees.FeeAmount
+FROM 
+    fees
+LEFT JOIN (
     SELECT 
-        orderid,
-        SUM(fee_amount) AS total_fees
+        StudentId,
+        SUM(FeeAmount) AS TotalFees
     FROM 
-        fee
+        fees
     GROUP BY 
-        orderid
-) main
-LEFT JOIN 
-    fee ON main.orderid = fee.orderid
-GROUP BY
-    main.orderid, main.total_fees
+        StudentId
+) total ON fees.StudentId = total.StudentId;
