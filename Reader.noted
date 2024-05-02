@@ -1,39 +1,4 @@
--- DDL for creating the student table
-CREATE TABLE student (
-    StudentId INT PRIMARY KEY,
-    StudentName VARCHAR(50)
-);
-
--- DDL for creating the fees table
-CREATE TABLE fees (
-    FeeId INT PRIMARY KEY,
-    StudentId INT,
-    FeeAmount DECIMAL(10, 2),
-    CONSTRAINT fk_student FOREIGN KEY (StudentId) REFERENCES student(StudentId)
-);
-
--- Sample data queries to fill the tables
-INSERT INTO student (StudentId, StudentName) VALUES (1, 'Alice');
-INSERT INTO student (StudentId, StudentName) VALUES (2, 'Bob');
-
-INSERT INTO fees (FeeId, StudentId, FeeAmount) VALUES (1, 1, 100.00);
-INSERT INTO fees (FeeId, StudentId, FeeAmount) VALUES (2, 1, 50.00);
-INSERT INTO fees (FeeId, StudentId, FeeAmount) VALUES (3, 2, 75.00);
-
-
-SELECT 
-    fees.StudentId,
-    total.TotalFees,
-    fees.FeeId,
-    fees.FeeAmount
-FROM 
-    fees
-LEFT JOIN (
-    SELECT 
-        StudentId,
-        SUM(FeeAmount) AS TotalFees
-    FROM 
-        fees
-    GROUP BY 
-        StudentId
-) total ON fees.StudentId = total.StudentId;
+SELECT
+    CASE WHEN category IS NOT NULL THEN category ELSE price END AS category_or_price
+FROM
+    your_table;
