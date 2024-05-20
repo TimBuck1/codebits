@@ -16,3 +16,20 @@ FROM
     TopStudents
 WHERE 
     row_num <= 5;
+
+
+-- Create the students table
+CREATE TABLE students (
+    student_id INT PRIMARY KEY,
+    name VARCHAR(50),
+    math_marks INT
+);
+
+-- Insert sample data into the students table
+INSERT INTO students (student_id, name, math_marks) VALUES
+(1, 'Alice', 95),
+(2, 'Bob', 90),
+(3, 'Charlie', 85),
+(4, 'David', 80),
+(5, 'Eve', 75),
+(6, 'Frank', 70);
