@@ -61,3 +61,60 @@ SELECT
     SUM(math_marks) AS total_marks
 FROM 
     TopStudents;
+
+
+
+WITH TopStudents AS (
+    SELECT 
+        student_id,
+        CASE 
+            WHEN math_marks >= 90 THEN NULL
+            ELSE name
+        END AS name,
+        math_marks
+    FROM (
+        SELECT 
+            student_id,
+            name,
+            math_marks,
+            ROW_NUMBER() OVER (ORDER BY math_marks DESC) AS row_num
+        FROM 
+            students
+    )
+    WHERE row_num <= 5
+), ConcatenatedNames AS (
+    SELECT 
+        student_id,
+        name || ' (ID: ' || TO_CHAR(student_id) || ')' AS concatenated_name
+    FROM 
+        students
+    WHERE 
+        math_marks >= 90
+)
+SELECT 
+    student_id,
+    name,
+    math_marks,
+    NULL AS total_marks
+FROM 
+    TopStudents
+
+UNION ALL
+
+SELECT 
+    NULL AS student_id,
+    'Total' AS name,
+    NULL AS math_marks,
+    SUM(math_marks) AS total_marks
+FROM 
+    TopStudents
+
+UNION ALL
+
+SELECT 
+    c.student_id,
+    c.concatenated_name,
+    NULL AS math_marks,
+    NULL AS total_marks
+FROM 
+    ConcatenatedNames c;
