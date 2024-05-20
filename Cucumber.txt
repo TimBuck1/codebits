@@ -26,10 +26,14 @@ CREATE TABLE students (
 );
 
 -- Insert sample data into the students table
-INSERT INTO students (student_id, name, math_marks) VALUES
-(1, 'Alice', 95),
-(2, 'Bob', 90),
-(3, 'Charlie', 85),
-(4, 'David', 80),
-(5, 'Eve', 75),
-(6, 'Frank', 70);
+-- Insert sample data into the students table
+INSERT INTO students (student_id, name, math_marks) VALUES (1, 'Alice', 95);
+INSERT INTO students (student_id, name, math_marks) VALUES (2, 'Bob', 90);
+INSERT INTO students (student_id, name, math_marks) VALUES (3, 'Charlie', 85);
+INSERT INTO students (student_id, name, math_marks) VALUES (4, 'David', 80);
+INSERT INTO students (student_id, name, math_marks) VALUES (5, 'Eve', 75);
+INSERT INTO students (student_id, name, math_marks) VALUES (6, 'Frank', 70);
+
+-- Commit the changes
+COMMIT;
+
