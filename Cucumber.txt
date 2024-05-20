@@ -7,15 +7,25 @@ WITH TopStudents AS (
     FROM 
         students
 )
+, SumMarks AS (
+    SELECT 
+        SUM(math_marks) AS total_marks
+    FROM 
+        TopStudents
+    WHERE 
+        row_num <= 5
+)
 SELECT 
-    (SELECT SUM(math_marks) FROM TopStudents WHERE row_num <= 5) AS total_marks,
-    student_id,
-    name,
-    math_marks
+    s.total_marks,
+    t.student_id,
+    t.name,
+    t.math_marks
 FROM 
-    TopStudents
+    TopStudents t,
+    SumMarks s
 WHERE 
-    row_num <= 5;
+    t.row_num <= 5;
+
 
 
 -- Create the students table
