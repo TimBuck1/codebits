@@ -1,25 +1,29 @@
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CsvDirectoryToDatabaseLoader {
 
     public static void main(String[] args) {
-        String directoryPath = "/path/to/directory"; // Replace with the directory containing your CSV files
+        String sequenceFilePath = "refdata/file_sequence.txt"; // Path to the sequence file in resources
+        String directoryPath = "refdata"; // Directory containing the CSV files
 
         try (Connection connection = getConnection()) {
-            File directory = new File(directoryPath);
-            File[] files = directory.listFiles((dir, name) -> name.toLowerCase().endsWith(".txt"));
-
-            if (files != null) {
-                for (File file : files) {
-                    String tableName = getTableNameFromFileName(file.getName());
-                    readAndInsertData(file, tableName, connection);
+            List<String> files = getFileSequence(sequenceFilePath);
+            for (String fileName : files) {
+                String tableName = getTableNameFromFileName(fileName);
+                InputStream fileInputStream = CsvDirectoryToDatabaseLoader.class.getClassLoader().getResourceAsStream(directoryPath + "/" + fileName);
+                if (fileInputStream != null) {
+                    readAndInsertData(fileInputStream, tableName, connection);
+                } else {
+                    System.err.println("File not found: " + fileName);
                 }
             }
         } catch (SQLException | IOException e) {
@@ -27,16 +31,28 @@ public class CsvDirectoryToDatabaseLoader {
         }
     }
 
+    private static List<String> getFileSequence(String sequenceFilePath) throws IOException {
+        List<String> fileList = new ArrayList<>();
+        try (InputStream inputStream = CsvDirectoryToDatabaseLoader.class.getClassLoader().getResourceAsStream(sequenceFilePath);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                fileList.add(line.trim());
+            }
+        }
+        return fileList;
+    }
+
     private static String getTableNameFromFileName(String fileName) {
         String baseName = fileName.substring(0, fileName.lastIndexOf('.'));
         return baseName;
     }
 
-    private static void readAndInsertData(File file, String tableName, Connection connection) throws IOException, SQLException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+    private static void readAndInsertData(InputStream inputStream, String tableName, Connection connection) throws IOException, SQLException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
             String headerLine = reader.readLine();
             if (headerLine == null) {
-                throw new IOException("Empty file: " + file.getName());
+                throw new IOException("Empty file: " + tableName);
             }
 
             String[] columns = headerLine.split(",");
