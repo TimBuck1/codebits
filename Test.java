@@ -4,8 +4,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -59,11 +59,14 @@ public class CsvDirectoryToDatabaseLoader {
             String[] columns = headerLine.split(",");
             String insertSqlTemplate = generateInsertSqlTemplate(tableName, columns);
 
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] values = line.split(",");
-                String insertSql = createInsertSql(insertSqlTemplate, columns, values);
-                executeSql(connection, insertSql);
+            try (PreparedStatement preparedStatement = connection.prepareStatement(insertSqlTemplate)) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] values = line.split(",");
+                    setPreparedStatementValues(preparedStatement, columns, values);
+                    preparedStatement.addBatch();
+                }
+                preparedStatement.executeBatch();
             }
         }
     }
@@ -88,24 +91,22 @@ public class CsvDirectoryToDatabaseLoader {
         return sql.toString();
     }
 
-    private static String createInsertSql(String template, String[] columns, String[] values) {
+    private static void setPreparedStatementValues(PreparedStatement preparedStatement, String[] columns, String[] values) throws SQLException {
         for (int i = 0; i < values.length; i++) {
             String value = values[i].trim();
             if ("todaysdate".equalsIgnoreCase(value)) {
-                value = "TO_DATE('" + getCurrentDate() + "', 'DD-MON-YY')";
+                preparedStatement.setString(i + 1, getCurrentDate());
             } else if ("\"\"".equals(value) || value.isEmpty()) {
-                value = "NULL";
+                preparedStatement.setNull(i + 1, java.sql.Types.NULL);
             } else {
                 value = value.replaceAll("^\"|\"$", ""); // Remove surrounding double quotes if any
                 if (isDateColumn(columns[i])) {
-                    value = "TO_DATE('" + value + "', 'DD-MON-YY')";
+                    preparedStatement.setString(i + 1, value);
                 } else {
-                    value = "'" + value + "'";
+                    preparedStatement.setString(i + 1, value);
                 }
             }
-            template = template.replaceFirst("\\?", value);
         }
-        return template;
     }
 
     private static boolean isDateColumn(String columnName) {
@@ -116,19 +117,6 @@ public class CsvDirectoryToDatabaseLoader {
     private static String getCurrentDate() {
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MMM-yy");
         return sdf.format(new Date());
-    }
-
-    private static void executeSql(Connection connection, String sql) throws SQLException {
-        System.out.println("Executing SQL: " + sql);
-        try (Statement statement = connection.createStatement()) {
-            statement.execute(sql);
-        } catch (SQLException e) {
-            System.err.println("Error executing SQL: " + sql);
-            System.err.println("SQL Error Code: " + e.getErrorCode());
-            System.err.println("SQL State: " + e.getSQLState());
-            System.err.println("Error Message: " + e.getMessage());
-            throw e;
-        }
     }
 
     private static Connection getConnection() throws SQLException {
