@@ -2,6 +2,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.HttpClientErrorException;
 
 import javax.annotation.PostConstruct;
 import java.lang.management.ManagementFactory;
@@ -37,7 +38,39 @@ public class PerformanceTester {
     }
 
     @PostConstruct
-    public void testPerformance() {
+    public void init() {
+        checkHealthAndTestPerformance();
+    }
+
+    private void checkHealthAndTestPerformance() {
+        String healthEndpoint = "http://" + taxAppServiceName + ":" + taxAppPort + "/actuator/health";
+        
+        // Wait for tax-app to be healthy
+        while (true) {
+            try {
+                String healthStatus = restTemplate.getForObject(healthEndpoint, String.class);
+                if (healthStatus.contains("\"status\":\"UP\"")) {
+                    logger.info("Tax app is UP. Starting performance tests.");
+                    testPerformance();
+                    break;
+                } else {
+                    logger.info("Tax app is not UP yet. Waiting...");
+                }
+            } catch (HttpClientErrorException e) {
+                logger.warning("Error checking health status: " + e.getMessage());
+            }
+
+            // Wait for 5 seconds before checking again
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.severe("Thread interrupted: " + e.getMessage());
+            }
+        }
+    }
+
+    private void testPerformance() {
         // Schedule JMX metric collection every 30 seconds
         scheduler.scheduleAtFixedRate(this::collectJmxMetrics, 0, 30, TimeUnit.SECONDS);
 
@@ -91,4 +124,3 @@ public class PerformanceTester {
         }
     }
 }
-
