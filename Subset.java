@@ -1,199 +1,59 @@
-import java.math.BigDecimal;
-import java.util.TreeSet;
+pipeline {
+    agent any
 
-class MyObject implements Comparable<MyObject> {
-    private BigDecimal field1;
-    private BigDecimal field2;
-
-    public MyObject(BigDecimal field1, BigDecimal field2) {
-        this.field1 = field1;
-        this.field2 = field2;
+    environment {
+        COMPOSE_PROJECT_NAME = 'my_project'
+        JAVA_OPTS = '-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false'
     }
 
-    @Override
-    public int compareTo(MyObject other) {
-        // Compare field1 first
-        int field1Comparison = this.field1.compareTo(other.field1);
-
-        if (field1Comparison != 0) {
-            return field1Comparison;
-        }
-
-        // If field1 is equal, compare field2
-        int field2Comparison = this.field2.compareTo(other.field2);
-
-        // Ensure that even if field2 is equal, the result is non-zero
-        return field2Comparison == 0 ? 1 : field2Comparison;
-    }
-
-    @Override
-    public String toString() {
-        return "MyObject{" +
-                "field1=" + field1 +
-                ", field2=" + field2 +
-                '}';
-    }
-}
-
-public class TreeSetExample {
-    public static void main(String[] args) {
-        TreeSet<MyObject> myObjects = new TreeSet<>();
-
-        myObjects.add(new MyObject(new BigDecimal("10"), new BigDecimal("20")));
-        myObjects.add(new MyObject(new BigDecimal("5"), new BigDecimal("30")));
-        myObjects.add(new MyObject(new BigDecimal("10"), new BigDecimal("10")));
-
-        System.out.println("Sorted Set: " + myObjects);
-    }
-}
-import java.math.BigDecimal;
-import java.util.TreeSet;
-
-class MyObject implements Comparable<MyObject> {
-    private BigDecimal field1;
-    private BigDecimal field2;
-
-    public MyObject(BigDecimal field1, BigDecimal field2) {
-        this.field1 = field1;
-        this.field2 = field2;
-    }
-
-    @Override
-    public int compareTo(MyObject other) {
-        // Compare field1 first
-        int field1Comparison = this.field1.compareTo(other.field1);
-
-        if (field1Comparison != 0) {
-            return field1Comparison;
-        }
-
-        // If field1 is equal, compare field2
-        int field2Comparison = this.field2.compareTo(other.field2);
-
-        // Ensure that even if field2 is equal, the result is non-zero
-        return field2Comparison == 0 ? 1 : field2Comparison;
-    }
-
-    @Override
-    public String toString() {
-        return "MyObject{" +
-                "field1=" + field1 +
-                ", field2=" + field2 +
-                '}';
-    }
-}
-
-public class TreeSetExample {
-    public static void main(String[] args) {
-        TreeSet<MyObject> myObjects = new TreeSet<>();
-
-        myObjects.add(new MyObject(new BigDecimal("10"), new BigDecimal("20")));
-        myObjects.add(new MyObject(new BigDecimal("5"), new BigDecimal("30")));
-        myObjects.add(new MyObject(new BigDecimal("10"), new BigDecimal("10")));
-
-        System.out.println("Sorted Set: " + myObjects);
-    }
-}
-import java.math.BigDecimal;
-import java.util.TreeSet;
-
-class MyObject implements Comparable<MyObject> {
-    private BigDecimal field1;
-    private BigDecimal field2;
-
-    public MyObject(BigDecimal field1, BigDecimal field2) {
-        this.field1 = field1;
-        this.field2 = field2;
-    }
-
-    @Override
-    public int compareTo(MyObject other) {
-        // Compare field1 first
-        int field1Comparison = this.field1.compareTo(other.field1);
-
-        if (field1Comparison != 0) {
-            return field1Comparison;
-        }
-
-        // If field1 is equal, compare field2
-        int field2Comparison = this.field2.compareTo(other.field2);
-
-        // Ensure that even if field2 is equal, the result is non-zero
-        return field2Comparison == 0 ? 1 : field2Comparison;
-    }
-
-    @Override
-    public String toString() {
-        return "MyObject{" +
-                "field1=" + field1 +
-                ", field2=" + field2 +
-                '}';
-    }
-}
-
-public class TreeSetExample {
-    public static void main(String[] args) {
-        TreeSet<MyObject> myObjects = new TreeSet<>();
-
-        myObjects.add(new MyObject(new BigDecimal("10"), new BigDecimal("20")));
-        myObjects.add(new MyObject(new BigDecimal("5"), new BigDecimal("30")));
-        myObjects.add(new MyObject(new BigDecimal("10"), new BigDecimal("10")));
-
-        System.out.println("Sorted Set: " + myObjects);
-    }
-}
-
-import java.math.BigDecimal;
-import java.util.Comparator;
-import java.util.TreeSet;
-
-class MyObject {
-    private BigDecimal field1;
-    private BigDecimal field2;
-    private String type;
-
-    public MyObject(BigDecimal field1, BigDecimal field2, String type) {
-        this.field1 = field1;
-        this.field2 = field2;
-        this.type = type;
-    }
-
-    @Override
-    public String toString() {
-        return "MyObject{" +
-                "field1=" + field1 +
-                ", field2=" + field2 +
-                ", type='" + type + '\'' +
-                '}';
-    }
-}
-
-public class TreeSetExample {
-    public static void main(String[] args) {
-        TreeSet<MyObject> myObjects = new TreeSet<>(new MyObjectComparator());
-
-        myObjects.add(new MyObject(new BigDecimal("10"), new BigDecimal("20"), "ALPHA"));
-        myObjects.add(new MyObject(new BigDecimal("5"), new BigDecimal("30"), "BETA"));
-        myObjects.add(new MyObject(new BigDecimal("10"), new BigDecimal("10"), "ALPHA"));
-
-        System.out.println("Sorted Set: " + myObjects);
-    }
-}
-
-class MyObjectComparator implements Comparator<MyObject> {
-    @Override
-    public int compare(MyObject obj1, MyObject obj2) {
-        if ("ALPHA".equals(obj1.getType()) && "ALPHA".equals(obj2.getType())) {
-            // Custom comparison logic for ALPHA type
-            int field1Comparison = obj1.getField1().compareTo(obj2.getField1());
-            if (field1Comparison != 0) {
-                return field1Comparison;
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://your-repo-url.git'
             }
-
-            return obj1.getField2().compareTo(obj2.getField2());
         }
 
-        // For non-ALPHA types or mixed types, use default comparison
-        return obj1.getType().compareTo(obj2.getType());
+        stage('Build and Deploy') {
+            steps {
+                script {
+                    // Clean up any previous containers
+                    sh 'docker-compose down'
+                    
+                    // Build and bring up the application with JMX enabled
+                    sh 'docker-compose up --build -d'
+                    
+                    // Wait for the services to be up and running
+                    sleep(time: 30, unit: 'SECONDS')
+                }
+            }
+        }
+
+        stage('Run Performance Tests') {
+            steps {
+                script {
+                    // Run the performance tests
+                    sh 'docker-compose run --rm performance-tester'
+                }
+            }
+        }
+
+        stage('Teardown') {
+            steps {
+                // Bring down the application
+                sh 'docker-compose down'
+            }
+        }
+    }
+
+    post {
+        always {
+            // Archive logs or other artifacts
+            archiveArtifacts artifacts: 'logs/**/*.log', allowEmptyArchive: true
+            
+            // Print performance tester logs
+            script {
+                sh 'docker-compose logs performance-tester'
+            }
+        }
     }
 }
