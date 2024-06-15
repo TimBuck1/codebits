@@ -1,1 +1,35 @@
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@ConfigurationProperties(prefix = "tablefiller")
+public class TableFillerConfig {
+
+    private int products;
+    private int taxes;
+
+    @PostConstruct
+    public void printProperties() {
+        System.out.println("Products: " + products);
+        System.out.println("Taxes: " + taxes);
+    }
+
+    // Getters and Setters
+
+    public int getProducts() {
+        return products;
+    }
+
+    public void setProducts(int products) {
+        this.products = products;
+    }
+
+    public int getTaxes() {
+        return taxes;
+    }
+
+    public void setTaxes(int taxes) {
+        this.taxes = taxes;
+    }
+}
