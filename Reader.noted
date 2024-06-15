@@ -9,8 +9,8 @@ import java.lang.management.MemoryUsage;
 public class JMXHeapMemoryUsage {
     public static void main(String[] args) {
         try {
-            String hostname = "127.0.0.1";
-            int port = 9010;
+            String hostname = "127.0.0.1"; // Change this to your host IP
+            int port = 9010; // Change this to your JMX port
             String url = String.format("service:jmx:rmi:///jndi/rmi://%s:%d/jmxrmi", hostname, port);
 
             JMXServiceURL serviceUrl = new JMXServiceURL(url);
@@ -21,10 +21,17 @@ public class JMXHeapMemoryUsage {
                     mBeanServerConnection, ManagementFactory.MEMORY_MXBEAN_NAME, MemoryMXBean.class);
 
             MemoryUsage heapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
-            System.out.println("Initial Heap Memory: " + heapMemoryUsage.getInit());
-            System.out.println("Used Heap Memory: " + heapMemoryUsage.getUsed());
-            System.out.println("Committed Heap Memory: " + heapMemoryUsage.getCommitted());
-            System.out.println("Max Heap Memory: " + heapMemoryUsage.getMax());
+
+            // Convert bytes to MB
+            long init = heapMemoryUsage.getInit() / (1024 * 1024);
+            long used = heapMemoryUsage.getUsed() / (1024 * 1024);
+            long committed = heapMemoryUsage.getCommitted() / (1024 * 1024);
+            long max = heapMemoryUsage.getMax() / (1024 * 1024);
+
+            System.out.println("Initial Heap Memory (MB): " + init);
+            System.out.println("Used Heap Memory (MB): " + used);
+            System.out.println("Committed Heap Memory (MB): " + committed);
+            System.out.println("Max Heap Memory (MB): " + max);
 
             jmxConnector.close();
         } catch (Exception e) {
