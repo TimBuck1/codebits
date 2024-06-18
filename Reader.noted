@@ -1,1 +1,61 @@
 
+import org.springframework.context.annotation.Condition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.core.env.Environment;
+import org.springframework.core.type.AnnotatedTypeMetadata;
+
+public class TaxProfileCondition implements Condition {
+
+    @Override
+    public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+        Environment env = context.getEnvironment();
+        for (String profileName : env.getActiveProfiles()) {
+            if (profileName.startsWith("tax")) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.stereotype.Component;
+
+@SpringBootApplication
+public class MySpringBootApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(MySpringBootApplication.class, args);
+    }
+}
+
+@Component
+@Conditional(TaxProfileCondition.class)
+public class ApplicationStartup implements ApplicationListener<ApplicationReadyEvent> {
+
+    private final MyService myService;
+    private final ConfigurableApplicationContext context;
+
+    @Autowired
+    public ApplicationStartup(MyService myService, ConfigurableApplicationContext context) {
+        this.myService = myService;
+        this.context = context;
+    }
+
+    @Override
+    public void onApplicationEvent(ApplicationReadyEvent event) {
+        try {
+            myService.doSomething();
+            // If no exception occurs, cleanly shut down the application
+            SpringApplication.exit(context, () -> 0);
+        } catch (Exception e) {
+            // Handle exception (optional)
+            e.printStackTrace();
+        }
+    }
+}
