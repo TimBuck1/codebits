@@ -1,1 +1,41 @@
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.stereotype.Component;
+
+@SpringBootApplication
+public class MySpringBootApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(MySpringBootApplication.class, args);
+    }
+}
+
+@Component
+class ApplicationStartup implements ApplicationListener<ApplicationReadyEvent> {
+
+    private final MyService myService;
+    private final ConfigurableApplicationContext context;
+
+    @Autowired
+    public ApplicationStartup(MyService myService, ConfigurableApplicationContext context) {
+        this.myService = myService;
+        this.context = context;
+    }
+
+    @Override
+    public void onApplicationEvent(ApplicationReadyEvent event) {
+        try {
+            myService.doSomething();
+            // If no exception occurs, cleanly shut down the application
+            SpringApplication.exit(context, () -> 0);
+        } catch (Exception e) {
+            // Handle exception (optional)
+            e.printStackTrace();
+        }
+    }
+}
