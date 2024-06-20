@@ -1,1 +1,31 @@
 
+        stage('Monitor Service') {
+            steps {
+                script {
+                    def serviceStopped = false
+                    def maxRetries = 40
+                    def retryInterval = 30 // seconds
+                    
+                    for (int i = 0; i < maxRetries; i++) {
+                        try {
+                            def response = sh(script: "docker inspect --format='{{.State.Running}}' ${SERVICE_NAME}", returnStdout: true).trim()
+                            echo "Docker inspect response: ${response}"
+                            if (response == 'false') {
+                                serviceStopped = true
+                                break
+                            }
+                        } catch (Exception e) {
+                            echo "Exception caught: ${e.getMessage()}"
+                            // Retry after an exception
+                        }
+                        sleep(time: retryInterval, unit: 'SECONDS')
+                    }
+
+                    if (!serviceStopped) {
+                        error("${SERVICE_NAME} did not stop within the expected time.")
+                    } else {
+                        echo "${SERVICE_NAME} stopped successfully."
+                    }
+                }
+            }
+        }
