@@ -1,1 +1,3 @@
 
+// Archive performance-app logs
+            archiveArtifacts artifacts: '**/performance-app/*.log', allowEmptyArchive: true
