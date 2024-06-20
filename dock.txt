@@ -1,104 +1,70 @@
-version: '3.7'
-
-services:
-  app1:
-    image: your-docker-registry/app1:latest
-    ports:
-      - "8081:8081"
-    environment:
-      - SOME_ENV_VAR=value
-
-  app2:
-    image: your-docker-registry/app2:latest
-    ports:
-      - "8082:8082"
-    environment:
-      - SOME_ENV_VAR=value
-
-  app3:
-    image: your-docker-registry/app3:latest
-    ports:
-      - "8083:8083"
-    environment:
-      - SOME_ENV_VAR=value
-
-  app4:
-    image: your-docker-registry/app4:latest
-    ports:
-      - "8084:8084"
-    environment:
-      - SOME_ENV_VAR=value
-
-  tax-app:
-    image: your-docker-registry/tax-app:latest
-    ports:
-      - "8085:8085"
-    environment:
-      - SOME_ENV_VAR=value
-    depends_on:
-      - app1
-      - app2
-      - app3
-      - app4
-
-
-
-
 pipeline {
     agent any
 
     environment {
         DOCKER_REGISTRY = 'your-docker-registry'
+        SPRING_PROFILES_ACTIVE = 'medium'
         DOCKER_COMPOSE_FILE = 'docker-compose.yml'
+        PERFORMANCE_APP_SERVICE = 'performance-app'
+        TAX_APP_SERVICE = 'tax-app'
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Pull Images') {
             steps {
                 script {
                     // Pull the Docker images from the registry
-                    sh "docker pull ${DOCKER_REGISTRY}/app1:latest"
-                    sh "docker pull ${DOCKER_REGISTRY}/app2:latest"
-                    sh "docker pull ${DOCKER_REGISTRY}/app3:latest"
-                    sh "docker pull ${DOCKER_REGISTRY}/app4:latest"
+                    sh "docker pull ${DOCKER_REGISTRY}/performance-app:latest"
                     sh "docker pull ${DOCKER_REGISTRY}/tax-app:latest"
+                    // Pull other necessary images if needed
                 }
             }
         }
 
-        stage('Bring Up Services') {
+        stage('Start Applications') {
             steps {
                 script {
-                    // Bring up the applications
-                    sh "docker-compose -f ${DOCKER_COMPOSE_FILE} up -d app1 app2 app3 app4"
-                }
-            }
-        }
-
-        stage('Wait for Services') {
-            steps {
-                script {
-                    // Wait for the services to be healthy (you can adjust this logic as needed)
+                    // Bring up the performance tester and other applications
+                    sh "SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE} docker-compose -f ${DOCKER_COMPOSE_FILE} up -d ${PERFORMANCE_APP_SERVICE}"
+                    sh "SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE} docker-compose -f ${DOCKER_COMPOSE_FILE} up -d ${TAX_APP_SERVICE}"
+                    
+                    // Wait for a while to make sure applications are initializing
                     sleep(time: 30, unit: 'SECONDS')
                 }
             }
         }
 
-        stage('Bring Up Tax App') {
+        stage('Monitor Performance App') {
             steps {
                 script {
-                    // Bring up the Tax-app
-                    sh "docker-compose -f ${DOCKER_COMPOSE_FILE} up -d tax-app"
-                }
-            }
-        }
+                    def performanceAppStopped = false
+                    def maxRetries = 40
+                    def retryInterval = 30 // seconds
+                    
+                    for (int i = 0; i < maxRetries; i++) {
+                        try {
+                            def response = sh(script: "docker inspect --format='{{.State.Running}}' ${PERFORMANCE_APP_SERVICE}", returnStdout: true).trim()
+                            if (response == 'false') {
+                                performanceAppStopped = true
+                                break
+                            }
+                        } catch (Exception e) {
+                            // Ignore the exception and retry
+                        }
+                        sleep(time: retryInterval, unit: 'SECONDS')
+                    }
 
-        stage('Run Performance Tests') {
-            steps {
-                script {
-                    // Run your performance tests here
-                    // For example, using a shell script or a specific performance testing tool
-                    sh "./run-performance-tests.sh"
+                    if (!performanceAppStopped) {
+                        error("Performance app did not stop within the expected time.")
+                    } else {
+                        echo "Performance app stopped successfully."
+                    }
                 }
             }
         }
