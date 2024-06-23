@@ -1,61 +1,17 @@
-pipeline {
-    agent any
+version: '3.8'
 
-    environment {
-        // Define the ports and other fixed environment variables
-        JMX_PORT = '9010'
-        JMX_RMI_PORT = '9011'
-    }
-
-    stages {
-        stage('Prepare Environment') {
-            steps {
-                script {
-                    // Determine the host IP address
-                    def hostIp = sh(script: "hostname -I | awk '{print \$1}'", returnStdout: true).trim()
-                    env.YOUR_HOST_IP = hostIp
-
-                    // Set the JAVA_OPTS environment variable
-                    env.JAVA_OPTS = "-Dspring.jmx.enabled=true " +
-                                    "-Dcom.sun.management.jmxremote=true " +
-                                    "-Dcom.sun.management.jmxremote.port=${env.JMX_PORT} " +
-                                    "-Dcom.sun.management.jmxremote.rmi.port=${env.JMX_RMI_PORT} " +
-                                    "-Dcom.sun.management.jmxremote.authenticate=false " +
-                                    "-Dcom.sun.management.jmxremote.ssl=false " +
-                                    "-Dcom.sun.management.jmxremote.local.only=false " +
-                                    "-Djava.rmi.server.hostname=${env.YOUR_HOST_IP}"
-                }
-            }
-        }
-
-        stage('Build and Deploy') {
-            steps {
-                script {
-                    // Run Docker Compose with the dynamically set JAVA_OPTS
-                    sh """
-                        docker-compose -f docker-compose.yml up -d --build
-                    """
-                }
-            }
-        }
-
-        stage('Test Performance') {
-            steps {
-                script {
-                    // Your logic to test performance goes here
-                    // For example, run your performance tester which will use the JAVA_OPTS environment variable
-                    sh """
-                        docker run --rm -e JAVA_OPTS="${env.JAVA_OPTS}" performance-tester:latest
-                    """
-                }
-            }
-        }
-    }
-
-    post {
-        always {
-            // Cleanup after pipeline execution
-            sh 'docker-compose down'
-        }
-    }
-}
+services:
+  performance-app:
+    image: your-docker-registry/performance-app:latest
+    environment:
+      JAVA_OPTS: "-Dspring.jmx.enabled=true -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=${JMX_PORT} -Dcom.sun.management.jmxremote.rmi.port=${JMX_RMI_PORT} -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.local.only=false -Djava.rmi.server.hostname=${YOUR_HOST_IP}"
+    ports:
+      - "${JMX_PORT}:${JMX_PORT}"
+      - "${JMX_RMI_PORT}:${JMX_RMI_PORT}"
+  tax-app:
+    image: your-docker-registry/tax-app:latest
+    environment:
+      JAVA_OPTS: "-Dspring.jmx.enabled=true -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=${JMX_PORT} -Dcom.sun.management.jmxremote.rmi.port=${JMX_RMI_PORT} -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.local.only=false -Djava.rmi.server.hostname=${YOUR_HOST_IP}"
+    ports:
+      - "${JMX_PORT}:${JMX_PORT}"
+      - "${JMX_RMI_PORT}:${JMX_RMI_PORT}"
