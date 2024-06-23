@@ -1,43 +1,61 @@
-package com.example.myapp.service;
+pipeline {
+    agent any
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
+    environment {
+        // Define the ports and other fixed environment variables
+        JMX_PORT = '9010'
+        JMX_RMI_PORT = '9011'
+    }
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+    stages {
+        stage('Prepare Environment') {
+            steps {
+                script {
+                    // Determine the host IP address
+                    def hostIp = sh(script: "hostname -I | awk '{print \$1}'", returnStdout: true).trim()
+                    env.YOUR_HOST_IP = hostIp
 
-@Service
-public class MyService {
-
-    private static final Logger logger = LoggerFactory.getLogger(MyService.class);
-
-    public void loadResource() {
-        try {
-            // Using ClassLoader to get the resource URL
-            URL resourceUrl = getClass().getClassLoader().getResource("abc.csv");
-            if (resourceUrl == null) {
-                throw new IOException("Resource not found: abc.csv");
+                    // Set the JAVA_OPTS environment variable
+                    env.JAVA_OPTS = "-Dspring.jmx.enabled=true " +
+                                    "-Dcom.sun.management.jmxremote=true " +
+                                    "-Dcom.sun.management.jmxremote.port=${env.JMX_PORT} " +
+                                    "-Dcom.sun.management.jmxremote.rmi.port=${env.JMX_RMI_PORT} " +
+                                    "-Dcom.sun.management.jmxremote.authenticate=false " +
+                                    "-Dcom.sun.management.jmxremote.ssl=false " +
+                                    "-Dcom.sun.management.jmxremote.local.only=false " +
+                                    "-Djava.rmi.server.hostname=${env.YOUR_HOST_IP}"
+                }
             }
+        }
 
-            // Convert URL to URI
-            URI uri = resourceUrl.toURI();
-            System.out.println("URI: " + uri);
+        stage('Build and Deploy') {
+            steps {
+                script {
+                    // Run Docker Compose with the dynamically set JAVA_OPTS
+                    sh """
+                        docker-compose -f docker-compose.yml up -d --build
+                    """
+                }
+            }
+        }
 
-            // Use the URI with the Path class
-            Path path = Paths.get(uri);
-            System.out.println("Path: " + path);
+        stage('Test Performance') {
+            steps {
+                script {
+                    // Your logic to test performance goes here
+                    // For example, run your performance tester which will use the JAVA_OPTS environment variable
+                    sh """
+                        docker run --rm -e JAVA_OPTS="${env.JAVA_OPTS}" performance-tester:latest
+                    """
+                }
+            }
+        }
+    }
 
-            // Example usage with Files.readAllLines
-            // List<String> lines = Files.readAllLines(path);
-            // lines.forEach(System.out::println);
-
-        } catch (IOException | URISyntaxException e) {
-            logger.error("Failed to load resource", e);
+    post {
+        always {
+            // Cleanup after pipeline execution
+            sh 'docker-compose down'
         }
     }
 }
