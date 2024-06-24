@@ -1,12 +1,11 @@
-pipeline {
-    agent any
-    stages {
-        stage('Print IP Address') {
-            steps {
-                script {
-                    echo "Agent IP Address: ${env.ip_address}"
-                }
-            }
-        }
-    }
-}
+version: '3.8'
+services:
+  tax-app:
+    image: your-image
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=default
+    tty: true
+    init: true
+    restart: "no"
