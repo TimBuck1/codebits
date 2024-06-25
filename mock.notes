@@ -1,31 +1,34 @@
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.reactive.server.WebTestClient;
-import reactor.core.publisher.Mono;
-
-@WebFluxTest(YourController.class)
-public class YourControllerTest {
-
-    @MockBean
-    private YourService yourService; // Assuming you have a service class
-
-    @Autowired
-    private WebTestClient webTestClient;
-
-    @Test
-    void testYourEndpoint() {
-        // Mock the behavior of yourService method if needed
-        Mockito.when(yourService.someMethod()).thenReturn(Mono.just("Your response"));
-
-        // Perform the request and verify the response
-        webTestClient.get()
-                .uri("/your-endpoint")
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody(String.class)
-                .isEqualTo("Your response");
+pipeline {
+    agent any
+    
+    parameters {
+        string(name: 'SPRING_PROFILES_ACTIVE', defaultValue: 'dev', description: 'Spring profiles active for the application')
+        string(name: 'IMAGE', defaultValue: 'your-docker-image:latest', description: 'Docker image to use for the container')
+    }
+    
+    stages {
+        stage('Deploy') {
+            steps {
+                script {
+                    // Set environment variables for docker-compose
+                    env.SPRING_PROFILES_ACTIVE = params.SPRING_PROFILES_ACTIVE
+                    env.IMAGE = params.IMAGE
+                    
+                    // Bring up containers using docker-compose
+                    sh 'docker-compose -f path/to/your/docker-compose.yml up -d'
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            // Cleanup stage to stop and remove containers, volumes, and networks
+            script {
+                echo "Cleaning up Docker environment..."
+                sh 'docker-compose -f path/to/your/docker-compose.yml down --remove-orphans --volumes'
+                sh 'docker network prune -f'
+            }
+        }
     }
 }
