@@ -1,11 +1,21 @@
-version: '3.8'
-services:
-  tax-app:
-    image: your-image
-    ports:
-      - "8080:8080"
-    environment:
-      - SPRING_PROFILES_ACTIVE=default
-    tty: true
-    init: true
-    restart: "no"
+#!/bin/bash
+
+# Start the Spring Boot application
+java -jar your-spring-boot-app.jar &
+
+# Get the PID of the Java process
+JAVA_PID=$!
+
+# Function to handle termination signal
+terminate() {
+    echo "Terminating Spring Boot application..."
+    kill -TERM $JAVA_PID
+    wait $JAVA_PID
+    exit 0
+}
+
+# Trap termination signals
+trap terminate TERM INT
+
+# Wait for the Java process to finish
+wait $JAVA_PID
