@@ -1,21 +1,19 @@
-#!/bin/bash
+def performanceAppRunning = true
 
-# Start the Spring Boot application
-java -jar your-spring-boot-app.jar &
-
-# Get the PID of the Java process
-JAVA_PID=$!
-
-# Function to handle termination signal
-terminate() {
-    echo "Terminating Spring Boot application..."
-    kill -TERM $JAVA_PID
-    wait $JAVA_PID
-    exit 0
+while (performanceAppRunning) {
+    // Check Docker logs for the presence of "ShutDown"
+    def dockerLogs = sh(script: "docker logs performance-app", returnStdout: true).trim()
+    
+    if (dockerLogs.contains("ShutDown")) {
+        echo "Found 'ShutDown' in logs. Exiting loop."
+        performanceAppRunning = false
+    } else {
+        // Check if the container is still running
+        performanceAppRunning = sh(script: "docker inspect -f '{{.State.Running}}' performance-app", returnStdout: true).trim() == 'true'
+        
+        if (performanceAppRunning) {
+            echo "Performance app still running. Waiting 30 seconds..."
+            sleep(30)
+        }
+    }
 }
-
-# Trap termination signals
-trap terminate TERM INT
-
-# Wait for the Java process to finish
-wait $JAVA_PID
