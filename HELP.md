@@ -1,9 +1,35 @@
-# Getting Started
+parameters {
+    string(name: 'IMAGE_LABEL', defaultValue: 'latest', description: 'Label of the Docker image to use (e.g., version or tag)')
+}
 
-### Reference Documentation
-For further reference, please consider the following sections:
 
-* [Official Apache Maven documentation](https://maven.apache.org/guides/index.html)
-* [Spring Boot Maven Plugin Reference Guide](https://docs.spring.io/spring-boot/docs/2.3.4.RELEASE/maven-plugin/reference/html/)
-* [Create an OCI image](https://docs.spring.io/spring-boot/docs/2.3.4.RELEASE/maven-plugin/reference/html/#build-image)
+version: '3'
+services:
+  app:
+    image: your-docker-registry/your-app:${IMAGE_LABEL}
+    ports:
+      - "8080:8080"
+    # Add other configuration options as needed
 
+
+pipeline {
+    agent any
+    
+    parameters {
+        string(name: 'IMAGE_LABEL', defaultValue: 'latest', description: 'Label of the Docker image to use (e.g., version or tag)')
+    }
+    
+    stages {
+        stage('Deploy') {
+            steps {
+                script {
+                    // Set environment variable for docker-compose
+                    env.IMAGE_LABEL = params.IMAGE_LABEL
+                    
+                    // Bring up containers using docker-compose
+                    sh 'docker-compose up -d'
+                }
+            }
+        }
+    }
+}
