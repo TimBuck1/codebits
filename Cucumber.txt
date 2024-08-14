@@ -152,3 +152,54 @@
 
 - **Logger Configuration**: Ensure that each class’s logger is properly configured in your logging configuration files (e.g., `logback.xml`, `log4j2.xml`) for appropriate logging levels and appenders.
 - **Performance**: This approach maintains the efficiency of using loggers, as each class-specific logger is created once and reused. The main performance consideration is ensuring that logging operations (e.g., constructing log messages) are performed conditionally based on the log level.
+
+package com.yourcompany.yourpackage;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
+public class MyServiceTest {
+
+    @Test
+    public void testPerformTask() {
+        // Capture the output of the log method
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
+
+        // Call the static method to be tested
+        MyService.performTask();
+
+        // Verify that the log messages were printed
+        String expectedOutput = "Task started" + System.lineSeparator() +
+                                "Task completed" + System.lineSeparator();
+        assertEquals(expectedOutput, outContent.toString());
+    }
+}
+
+package com.yourcompany.yourpackage;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+
+import static org.mockito.Mockito.*;
+
+public class MyServiceTest {
+
+    @Test
+    public void testPerformTask() {
+        // Mock the static method log in MyService class
+        try (MockedStatic<MyService> mockedStatic = Mockito.mockStatic(MyService.class)) {
+            
+            // Call the static method to be tested
+            MyService.performTask();
+
+            // Verify that the log method was called twice with specific messages
+            mockedStatic.verify(() -> MyService.log("Task started"));
+            mockedStatic.verify(() -> MyService.log("Task completed"));
+        }
+    }
+}
+
