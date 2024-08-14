@@ -236,3 +236,38 @@ public class MyServiceTest {
         }
     }
 }
+
+
+package com.yourcompany.yourpackage;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+
+import static org.mockito.Mockito.*;
+
+public class MyServiceTest {
+
+    @Test
+    public void testPerformTask() {
+        try (MockedStatic<MyService> mockedStatic = Mockito.mockStatic(MyService.class)) {
+
+            // Define what the mock should do when performTask() is called with specific arguments
+            mockedStatic.when(() -> MyService.performTask(anyString(), any(Class.class), any()))
+                        .thenAnswer(invocation -> {
+                            String taskName = invocation.getArgument(0);
+                            Class<?> taskType = invocation.getArgument(1);
+                            Object taskData = invocation.getArgument(2);
+                            System.out.println("Mocked Task " + taskName + " of type " + taskType.getSimpleName() + " performed with data: " + taskData);
+                            return null;  // Returning null is correct for a void method
+                        });
+
+            // Call the static method with specific parameters
+            MyService.performTask("TestTask", String.class, "SampleData");
+
+            // Verify that the performTask method was called once with the expected arguments
+            mockedStatic.verify(() -> MyService.performTask(eq("TestTask"), eq(String.class), eq("SampleData")), times(1));
+        }
+    }
+}
+
