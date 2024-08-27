@@ -1,1 +1,2 @@
+kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic my_topic
 
