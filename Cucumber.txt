@@ -1,2 +1,60 @@
-kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic my_topic
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Response;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+
+public class JerseyClientServiceTest {
+
+    @Mock
+    private Client mockClient;
+
+    @Mock
+    private WebTarget mockWebTarget;
+
+    @Mock
+    private Response mockResponse;
+
+    @InjectMocks
+    private JerseyClientService service;
+
+    @BeforeEach
+    public void setUp() {
+        // Initialize mocks
+        MockitoAnnotations.openMocks(this);
+        service = new JerseyClientService("http://example.com");
+    }
+
+    @Test
+    public void testGetResponse_Success() {
+        // Setup mock behavior
+        when(mockClient.target(anyString())).thenReturn(mockWebTarget);
+        when(mockWebTarget.path(anyString())).thenReturn(mockWebTarget);
+        when(mockWebTarget.request()).thenReturn(mockWebTarget);
+        when(mockWebTarget.get()).thenReturn(mockResponse);
+        when(mockResponse.getStatus()).thenReturn(200);
+        when(mockResponse.readEntity(String.class)).thenReturn("Success Response");
+
+        // Call the method to test
+        String result = service.getResponse("test-endpoint");
+
+        // Verify and assert
+        assertEquals("Success Response", result);
+        verify(mockClient).target(anyString());
+        verify(mockWebTarget).get();
+    }
+
+    @Test
+    public void testGetResponse_Failure() {
+        // Setup mock behavior
+        when(mockClient.target(anyString())).thenReturn(mockWebTarget);
+        when(mockWebTarget.path(anyString
+
 
