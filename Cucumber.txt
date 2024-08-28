@@ -24,28 +24,27 @@ public class JerseyClientServiceTest {
     private ClientResponse mockClientResponse;
 
     @InjectMocks
-    private JerseyClientService service;
+    private JerseyClientService service; // Uses mockClient instead of connecting to a real URL
 
     @BeforeEach
     public void setUp() {
-        // Initialize mocks
+        // Initialize all mocks
         MockitoAnnotations.openMocks(this);
-        service = new JerseyClientService("http://example.com");
     }
 
     @Test
     public void testGetResponse_Success() {
-        // Setup mock behavior
+        // Mock behavior for successful response
         when(mockClient.resource(anyString())).thenReturn(mockWebResource);
         when(mockWebResource.path(anyString())).thenReturn(mockWebResource);
         when(mockWebResource.get(ClientResponse.class)).thenReturn(mockClientResponse);
         when(mockClientResponse.getStatus()).thenReturn(200);
         when(mockClientResponse.getEntity(String.class)).thenReturn("Success Response");
 
-        // Call the method to test
+        // Call the method under test
         String result = service.getResponse("test-endpoint");
 
-        // Verify and assert
+        // Verify the behavior and assertions
         assertEquals("Success Response", result);
         verify(mockClient).resource(anyString());
         verify(mockWebResource).get(ClientResponse.class);
@@ -53,24 +52,18 @@ public class JerseyClientServiceTest {
 
     @Test
     public void testGetResponse_Failure() {
-        // Setup mock behavior
+        // Mock behavior for failure response
         when(mockClient.resource(anyString())).thenReturn(mockWebResource);
         when(mockWebResource.path(anyString())).thenReturn(mockWebResource);
         when(mockWebResource.get(ClientResponse.class)).thenReturn(mockClientResponse);
         when(mockClientResponse.getStatus()).thenReturn(404);
 
-        // Expect an exception
+        // Expect an exception to be thrown due to failure response
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             service.getResponse("test-endpoint");
         });
 
+        // Verify the error message
         assertEquals("Failed with HTTP error code: 404", exception.getMessage());
     }
-}
-
-curl -X GET "http://localhost:9200/your_index_name/_search?pretty" -H 'Content-Type: application/json' -d'
-{
-  "query": {
-    "match_all": {}
-  }
 }
