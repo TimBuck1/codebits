@@ -67,3 +67,10 @@ public class JerseyClientServiceTest {
         assertEquals("Failed with HTTP error code: 404", exception.getMessage());
     }
 }
+
+curl -X GET "http://localhost:9200/your_index_name/_search?pretty" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "match_all": {}
+  }
+}
