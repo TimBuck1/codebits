@@ -1,6 +1,6 @@
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.Response;
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.WebResource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -17,10 +18,10 @@ public class JerseyClientServiceTest {
     private Client mockClient;
 
     @Mock
-    private WebTarget mockWebTarget;
+    private WebResource mockWebResource;
 
     @Mock
-    private Response mockResponse;
+    private ClientResponse mockClientResponse;
 
     @InjectMocks
     private JerseyClientService service;
@@ -35,26 +36,34 @@ public class JerseyClientServiceTest {
     @Test
     public void testGetResponse_Success() {
         // Setup mock behavior
-        when(mockClient.target(anyString())).thenReturn(mockWebTarget);
-        when(mockWebTarget.path(anyString())).thenReturn(mockWebTarget);
-        when(mockWebTarget.request()).thenReturn(mockWebTarget);
-        when(mockWebTarget.get()).thenReturn(mockResponse);
-        when(mockResponse.getStatus()).thenReturn(200);
-        when(mockResponse.readEntity(String.class)).thenReturn("Success Response");
+        when(mockClient.resource(anyString())).thenReturn(mockWebResource);
+        when(mockWebResource.path(anyString())).thenReturn(mockWebResource);
+        when(mockWebResource.get(ClientResponse.class)).thenReturn(mockClientResponse);
+        when(mockClientResponse.getStatus()).thenReturn(200);
+        when(mockClientResponse.getEntity(String.class)).thenReturn("Success Response");
 
         // Call the method to test
         String result = service.getResponse("test-endpoint");
 
         // Verify and assert
         assertEquals("Success Response", result);
-        verify(mockClient).target(anyString());
-        verify(mockWebTarget).get();
+        verify(mockClient).resource(anyString());
+        verify(mockWebResource).get(ClientResponse.class);
     }
 
     @Test
     public void testGetResponse_Failure() {
         // Setup mock behavior
-        when(mockClient.target(anyString())).thenReturn(mockWebTarget);
-        when(mockWebTarget.path(anyString
+        when(mockClient.resource(anyString())).thenReturn(mockWebResource);
+        when(mockWebResource.path(anyString())).thenReturn(mockWebResource);
+        when(mockWebResource.get(ClientResponse.class)).thenReturn(mockClientResponse);
+        when(mockClientResponse.getStatus()).thenReturn(404);
 
+        // Expect an exception
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            service.getResponse("test-endpoint");
+        });
 
+        assertEquals("Failed with HTTP error code: 404", exception.getMessage());
+    }
+}
