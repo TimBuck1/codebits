@@ -1,5 +1,28 @@
+import org.springframework.stereotype.Service;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+@Service
+public class HealthMonitorService {
+    private final AtomicBoolean healthy = new AtomicBoolean(true);
+
+    public void markUnhealthy() {
+        healthy.set(false);
+    }
+
+    public void markHealthy() {
+        healthy.set(true);
+    }
+
+    public boolean isHealthy() {
+        return healthy.get();
+    }
+}
+Step 2: Update WebFilter to Modify Health State
+Use the shared HealthMonitorService in your WebFilter to update the health status based on request or response conditions:
+
 java
 Copy code
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
@@ -9,23 +32,27 @@ import reactor.core.publisher.Mono;
 @Component
 public class CustomWebFilter implements WebFilter {
 
+    private final HealthMonitorService healthMonitorService;
+
+    @Autowired
+    public CustomWebFilter(HealthMonitorService healthMonitorService) {
+        this.healthMonitorService = healthMonitorService;
+    }
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-        // Log or inspect the request here
-        System.out.println("Request intercepted: " + exchange.getRequest().getURI());
-
-        // Continue with the filter chain
         return chain.filter(exchange).doOnSuccess(aVoid -> {
-            // Inspect the response after processing
-            System.out.println("Response status code: " + exchange.getResponse().getStatusCode());
-
-            // Check response body for specific keywords like "EXCEPTION"
-            // Additional logic for health checks or monitoring
+            // Example condition: check if response contains "EXCEPTION"
+            if (exchange.getResponse().getStatusCode().is5xxServerError()) {
+                healthMonitorService.markUnhealthy();
+            } else {
+                healthMonitorService.markHealthy();
+            }
         });
     }
 }
-Handling Health Checks with a Custom Reactive Health Indicator
-For custom health checks in a WebFlux environment, you can define a reactive health indicator:
+Step 3: Implement a ReactiveHealthIndicator that Reflects the Service State
+The ReactiveHealthIndicator reads the state from HealthMonitorService to report the application's health:
 
 java
 Copy code
@@ -37,33 +64,18 @@ import reactor.core.publisher.Mono;
 @Component
 public class TaxCalculationHealthIndicator implements ReactiveHealthIndicator {
 
+    private final HealthMonitorService healthMonitorService;
+
+    public TaxCalculationHealthIndicator(HealthMonitorService healthMonitorService) {
+        this.healthMonitorService = healthMonitorService;
+    }
+
     @Override
     public Mono<Health> health() {
-        // Example check: pinging a service, checking a cache, etc.
-        return checkServiceHealth()
-                .map(up -> up ? Health.up().build() : Health.down().withDetail("Error", "Service Unavailable").build());
-    }
-
-    private Mono<Boolean> checkServiceHealth() {
-        // Replace with actual service check logic
-        return Mono.just(true); // For example purposes, always returning healthy
+        if (healthMonitorService.isHealthy()) {
+            return Mono.just(Health.up().build());
+        } else {
+            return Mono.just(Health.down().withDetail("Error", "Detected issue with Tax Calculation").build());
+        }
     }
 }
-Updated Dependencies for WebFlux and Reactive Components
-Make sure you include only the necessary WebFlux dependencies:
-
-xml
-Copy code
-<dependencies>
-    <!-- Spring Boot Starter WebFlux -->
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-webflux</artifactId>
-    </dependency>
-
-    <!-- Spring Boot Starter Actuator -->
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-actuator</artifactId>
-    </dependency>
-</dependencies>
