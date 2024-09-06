@@ -1,29 +1,25 @@
 package com.example.health;
 
-import org.apache.kafka.clients.producer.KafkaProducer;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
 
 @Component
-public class KafkaProducerHealthIndicator implements HealthIndicator {
+public class TaxCalculationHealthIndicator implements HealthIndicator {
 
-    private final KafkaProducer<String, String> kafkaProducer;
+    private final TaxCalculationService taxCalculationService;
 
-    public KafkaProducerHealthIndicator(KafkaProducer<String, String> kafkaProducer) {
-        this.kafkaProducer = kafkaProducer;
+    public TaxCalculationHealthIndicator(TaxCalculationService taxCalculationService) {
+        this.taxCalculationService = taxCalculationService;
     }
 
     @Override
     public Health health() {
         try {
-            if (kafkaProducer != null) {
-                return Health.up().withDetail("KafkaProducer", "Available").build();
-            } else {
-                return Health.down().withDetail("KafkaProducer", "Producer is null").build();
-            }
+            taxCalculationService.performHealthCheck(); // Perform some dummy or light tax calculation operation
+            return Health.up().withDetail("TaxCalculation", "Operational").build();
         } catch (Exception e) {
-            return Health.down(e).withDetail("KafkaProducer", "Failed to create producer").build();
+            return Health.down(e).withDetail("TaxCalculation", "Exception occurred").build();
         }
     }
 }
