@@ -1,69 +1,31 @@
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+package com.example.health;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.stereotype.Component;
 
-public class JerseyClientServiceTest {
+import javax.sql.DataSource;
+import java.sql.Connection;
 
-    @Mock
-    private Client mockClient;
+@Component
+public class DatabaseHealthIndicator implements HealthIndicator {
 
-    @Mock
-    private WebResource mockWebResource;
+    private final DataSource dataSource;
 
-    @Mock
-    private ClientResponse mockClientResponse;
-
-    @InjectMocks
-    private JerseyClientService service; // Uses mockClient instead of connecting to a real URL
-
-    @BeforeEach
-    public void setUp() {
-        // Initialize all mocks
-        MockitoAnnotations.openMocks(this);
+    public DatabaseHealthIndicator(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
-    @Test
-    public void testGetResponse_Success() {
-        // Mock behavior for successful response
-        when(mockClient.resource(anyString())).thenReturn(mockWebResource);
-        when(mockWebResource.path(anyString())).thenReturn(mockWebResource);
-        when(mockWebResource.get(ClientResponse.class)).thenReturn(mockClientResponse);
-        when(mockClientResponse.getStatus()).thenReturn(200);
-        when(mockClientResponse.getEntity(String.class)).thenReturn("Success Response");
-
-        // Call the method under test
-        String result = service.getResponse("test-endpoint");
-
-        // Verify the behavior and assertions
-        assertEquals("Success Response", result);
-        verify(mockClient).resource(anyString());
-        verify(mockWebResource).get(ClientResponse.class);
-    }
-
-    @Test
-    public void testGetResponse_Failure() {
-        // Mock behavior for failure response
-        when(mockClient.resource(anyString())).thenReturn(mockWebResource);
-        when(mockWebResource.path(anyString())).thenReturn(mockWebResource);
-        when(mockWebResource.get(ClientResponse.class)).thenReturn(mockClientResponse);
-        when(mockClientResponse.getStatus()).thenReturn(404);
-
-        // Expect an exception to be thrown due to failure response
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            service.getResponse("test-endpoint");
-        });
-
-        // Verify the error message
-        assertEquals("Failed with HTTP error code: 404", exception.getMessage());
+    @Override
+    public Health health() {
+        try (Connection connection = dataSource.getConnection()) {
+            if (connection.isValid(1)) {
+                return Health.up().withDetail("Database", "Connected").build();
+            } else {
+                return Health.down().withDetail("Database", "Connection is not valid").build();
+            }
+        } catch (Exception e) {
+            return Health.down(e).withDetail("Database", "Cannot connect to database").build();
+        }
     }
 }
