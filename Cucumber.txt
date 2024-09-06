@@ -1,53 +1,69 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" 
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+java
+Copy code
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
+import reactor.core.publisher.Mono;
 
-    <groupId>com.example</groupId>
-    <artifactId>tax-calculation-monitor</artifactId>
-    <version>1.0.0</version>
-    <packaging>jar</packaging>
+@Component
+public class CustomWebFilter implements WebFilter {
 
-    <parent>
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+        // Log or inspect the request here
+        System.out.println("Request intercepted: " + exchange.getRequest().getURI());
+
+        // Continue with the filter chain
+        return chain.filter(exchange).doOnSuccess(aVoid -> {
+            // Inspect the response after processing
+            System.out.println("Response status code: " + exchange.getResponse().getStatusCode());
+
+            // Check response body for specific keywords like "EXCEPTION"
+            // Additional logic for health checks or monitoring
+        });
+    }
+}
+Handling Health Checks with a Custom Reactive Health Indicator
+For custom health checks in a WebFlux environment, you can define a reactive health indicator:
+
+java
+Copy code
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.ReactiveHealthIndicator;
+import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
+
+@Component
+public class TaxCalculationHealthIndicator implements ReactiveHealthIndicator {
+
+    @Override
+    public Mono<Health> health() {
+        // Example check: pinging a service, checking a cache, etc.
+        return checkServiceHealth()
+                .map(up -> up ? Health.up().build() : Health.down().withDetail("Error", "Service Unavailable").build());
+    }
+
+    private Mono<Boolean> checkServiceHealth() {
+        // Replace with actual service check logic
+        return Mono.just(true); // For example purposes, always returning healthy
+    }
+}
+Updated Dependencies for WebFlux and Reactive Components
+Make sure you include only the necessary WebFlux dependencies:
+
+xml
+Copy code
+<dependencies>
+    <!-- Spring Boot Starter WebFlux -->
+    <dependency>
         <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.1.2</version> <!-- Make sure to use the latest stable version -->
-        <relativePath/> <!-- Lookup parent from repository -->
-    </parent>
+        <artifactId>spring-boot-starter-webflux</artifactId>
+    </dependency>
 
-    <properties>
-        <java.version>17</java.version> <!-- Ensure compatibility with your Java version -->
-    </properties>
-
-    <dependencies>
-        <!-- Spring Boot Starter Web -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-
-        <!-- Spring Boot Starter Actuator -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-
-        <!-- Optional: Spring Boot Starter Logging -->
-        <!-- This is usually included by default in Spring Boot -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-logging</artifactId>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
-            <!-- Spring Boot Maven Plugin -->
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
-</project>
-
+    <!-- Spring Boot Starter Actuator -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+</dependencies>
