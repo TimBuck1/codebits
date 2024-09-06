@@ -1,1 +1,10 @@
-
+private static boolean isProducerHealthy(KafkaProducer<String, String> producer) {
+        try {
+            // Use partitionsFor() to check broker connectivity
+            List<PartitionInfo> partitions = producer.partitionsFor("any-existing-topic");
+            return partitions != null && !partitions.isEmpty();
+        } catch (Exception e) {
+            // Log or handle the exception as needed
+            return false;
+        }
+    }
