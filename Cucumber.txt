@@ -1,10 +1,49 @@
-private static boolean isProducerHealthy(KafkaProducer<String, String> producer) {
-        try {
-            // Use partitionsFor() to check broker connectivity
-            List<PartitionInfo> partitions = producer.partitionsFor("any-existing-topic");
-            return partitions != null && !partitions.isEmpty();
-        } catch (Exception e) {
-            // Log or handle the exception as needed
-            return false;
-        }
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.serialization.StringSerializer;
+
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+import java.util.HashSet;
+
+public class KafkaProducerHealthCheck {
+
+    public static void main(String[] args) {
+        Properties props = new Properties();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+
+        KafkaProducer<String, String> producer = new KafkaProducer<>(props);
+
+        Set<String> topics = Set.of("topic1", "topic2", "topic3"); // Example topics
+        boolean allTopicsHealthy = checkTopicsHealth(producer, topics);
+
+        System.out.println("All topics healthy: " + allTopicsHealthy);
+
+        producer.close();
     }
+
+    private static boolean checkTopicsHealth(KafkaProducer<String, String> producer, Set<String> topics) {
+        boolean allHealthy = true;
+
+        for (String topic : topics) {
+            try {
+                List<PartitionInfo> partitions = producer.partitionsFor(topic);
+                if (partitions == null || partitions.isEmpty()) {
+                    System.out.println("No partitions found for topic: " + topic);
+                    allHealthy = false;
+                } else {
+                    System.out.println("Partitions for topic " + topic + ": " + partitions);
+                }
+            } catch (Exception e) {
+                System.out.println("Exception while checking topic " + topic + ": " + e.getMessage());
+                allHealthy = false;
+            }
+        }
+
+        return allHealthy;
+    }
+}
