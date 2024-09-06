@@ -1,5 +1,7 @@
 package com.example.health;
 
+import com.example.service.TaxCalculationService;
+import com.example.service.TaxCalculationService.TaxCalculationException;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
@@ -16,10 +18,12 @@ public class TaxCalculationHealthIndicator implements HealthIndicator {
     @Override
     public Health health() {
         try {
-            taxCalculationService.performHealthCheck(); // Perform some dummy or light tax calculation operation
+            taxCalculationService.performTaxCalculation("test"); // Replace "test" with the real input
             return Health.up().withDetail("TaxCalculation", "Operational").build();
+        } catch (TaxCalculationException e) {
+            return Health.down(e).withDetail("TaxCalculation", "Exception during tax calculation: " + e.getMessage()).build();
         } catch (Exception e) {
-            return Health.down(e).withDetail("TaxCalculation", "Exception occurred").build();
+            return Health.down(e).withDetail("TaxCalculation", "Unexpected error").build();
         }
     }
 }
