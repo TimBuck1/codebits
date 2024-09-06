@@ -1,31 +1,29 @@
 package com.example.health;
 
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-
 @Component
-public class DatabaseHealthIndicator implements HealthIndicator {
+public class KafkaProducerHealthIndicator implements HealthIndicator {
 
-    private final DataSource dataSource;
+    private final KafkaProducer<String, String> kafkaProducer;
 
-    public DatabaseHealthIndicator(DataSource dataSource) {
-        this.dataSource = dataSource;
+    public KafkaProducerHealthIndicator(KafkaProducer<String, String> kafkaProducer) {
+        this.kafkaProducer = kafkaProducer;
     }
 
     @Override
     public Health health() {
-        try (Connection connection = dataSource.getConnection()) {
-            if (connection.isValid(1)) {
-                return Health.up().withDetail("Database", "Connected").build();
+        try {
+            if (kafkaProducer != null) {
+                return Health.up().withDetail("KafkaProducer", "Available").build();
             } else {
-                return Health.down().withDetail("Database", "Connection is not valid").build();
+                return Health.down().withDetail("KafkaProducer", "Producer is null").build();
             }
         } catch (Exception e) {
-            return Health.down(e).withDetail("Database", "Cannot connect to database").build();
+            return Health.down(e).withDetail("KafkaProducer", "Failed to create producer").build();
         }
     }
 }
