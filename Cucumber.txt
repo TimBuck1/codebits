@@ -295,3 +295,46 @@ public class KafkaHealthService {
         return "UP";
     }
 }
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Service
+public class KafkaHealthService {
+
+    @Value("${tax.kafka.bootstrap-servers}")
+    private String bootstrapServers;
+
+    @Value("${tax.kafka.topics}")
+    private List<String> topics;  // Inject list of topics
+
+    @Value("${tax.kafka.tenant:}")  // Optional, defaults to empty if not set
+    private String tenant;
+
+    public String checkKafkaHealth() {
+        // Prepend tenant to each topic if tenant is not null or empty
+        List<String> processedTopics = topics.stream()
+                .filter(topic -> topic != null && !topic.isEmpty())  // Ensure topics are valid
+                .map(topic -> (tenant != null && !tenant.isEmpty()) ? tenant + "." + topic : topic)
+                .collect(Collectors.toList());
+
+        // Create configuration map with bootstrap server details
+        Map<String, Object> config = new HashMap<>();
+        config.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+
+        // Create AdminClient using the configuration
+        try (AdminClient adminClient = AdminClient.create(config)) {
+            // Your logic to check Kafka health using processedTopics
+            // Example: checking partitions for each topic in processedTopics
+        } catch (Exception e) {
+            return "DOWN";
+        }
+        return "UP";
+    }
+}
