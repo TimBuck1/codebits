@@ -203,3 +203,51 @@ public class KafkaHealthService {
         return "UP";
     }
 }
+
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.DescribeTopicsResult;
+import org.apache.kafka.clients.admin.TopicDescription;
+import org.apache.kafka.common.TopicPartitionInfo;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
+@Service
+public class KafkaHealthService {
+
+    @Value("${spring.kafka.bootstrap-servers}")
+    private String bootstrapServers;
+
+    public String checkKafkaHealth(String... topics) {
+        try (AdminClient adminClient = AdminClient.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers))) {
+            DescribeTopicsResult describeTopicsResult = adminClient.describeTopics(Set.of(topics));
+
+            // Wait for all describe requests to complete
+            Map<String, TopicDescription> topicDescriptions;
+            try {
+                topicDescriptions = describeTopicsResult.all().get();
+            } catch (ExecutionException | InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return "DOWN";
+            }
+
+            // Check each topic
+            for (String topic : topics) {
+                TopicDescription topicDescription = topicDescriptions.get(topic);
+                if (topicDescription == null || topicDescription.partitions().isEmpty()) {
+                    return "DOWN";
+                }
+            }
+        } catch (Exception e) {
+            return "DOWN";
+        }
+        return "UP";
+    }
+}
+
