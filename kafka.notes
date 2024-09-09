@@ -1,37 +1,33 @@
-import org.apache.kafka.clients.producer.*;
-
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.common.config.TopicConfig;
 import java.util.Properties;
 
-public class KafkaProducerExample {
+public class KafkaAdminClientExample {
+
     public static void main(String[] args) {
-        // Configure producer properties
-        Properties properties = new Properties();
-        properties.put("bootstrap.servers", "localhost:9092");
-        properties.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        properties.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        // Create properties for the AdminClient
+        Properties config = new Properties();
+        config.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, "your-broker:9093");
+        config.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
 
-        // Create Kafka producer
-        KafkaProducer<String, String> producer = new KafkaProducer<>(properties);
+        // SSL Configurations
+        config.put("ssl.keystore.location", "/path/to/keystore.jks");
+        config.put("ssl.keystore.password", "keystore-password");
+        config.put("ssl.key.password", "key-password");
+        config.put("ssl.truststore.location", "/path/to/truststore.jks");
+        config.put("ssl.truststore.password", "truststore-password");
 
-        // Create a ProducerRecord with topic, key, and value
-        ProducerRecord<String, String> record = new ProducerRecord<>("my-topic", "key", "message");
+        // Optional: Verify hostname
+        config.put("ssl.endpoint.identification.algorithm", "https");
 
-        // Send the record asynchronously and provide a callback
-        producer.send(record, new Callback() {
-            @Override
-            public void onCompletion(RecordMetadata metadata, Exception exception) {
-                if (exception == null) {
-                    System.out.println("Message sent successfully to topic " + metadata.topic() +
-                            ", partition " + metadata.partition() +
-                            ", offset " + metadata.offset());
-                } else {
-                    System.err.println("Error sending message: " + exception.getMessage());
-                }
-            }
-        });
+        // Create AdminClient instance
+        AdminClient adminClient = AdminClient.create(config);
 
-        // Flush and close the producer
-        producer.flush();
-        producer.close();
+        // Use adminClient for operations
+        // ...
+
+        // Close AdminClient when done
+        adminClient.close();
     }
 }
