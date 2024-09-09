@@ -251,3 +251,47 @@ public class KafkaHealthService {
     }
 }
 
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.DescribeTopicsResult;
+import org.apache.kafka.clients.admin.TopicDescription;
+import org.apache.kafka.common.TopicPartitionInfo;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
+@Service
+public class KafkaHealthService {
+
+    @Value("${spring.kafka.bootstrap-servers}")
+    private String bootstrapServers;
+
+    public String checkKafkaHealth(String... topics) {
+        try (AdminClient adminClient = AdminClient.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers))) {
+            DescribeTopicsResult describeTopicsResult = adminClient.describeTopics(Set.of(topics));
+
+            // Retrieve the futures for each topic
+            Map<String, CompletableFuture<TopicDescription>> topicFutures = describeTopicsResult.values();
+            for (String topic : topics) {
+                CompletableFuture<TopicDescription> future = topicFutures.get(topic);
+                try {
+                    TopicDescription topicDescription = future.get();
+                    if (topicDescription == null || topicDescription.partitions().isEmpty()) {
+                        return "DOWN";
+                    }
+                } catch (ExecutionException | InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return "DOWN";
+                }
+            }
+        } catch (Exception e) {
+            return "DOWN";
+        }
+        return "UP";
+    }
+}
