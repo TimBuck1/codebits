@@ -1,70 +1,130 @@
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.PartitionInfo;
-import org.apache.kafka.common.serialization.StringSerializer;
+xml
+Copy code
+<dependency>
+    <groupId>org.springframework.kafka</groupId>
+    <artifactId>spring-kafka</artifactId>
+</dependency>
+Gradle (build.gradle):
 
-import java.util.List;
-import java.util.Properties;
+groovy
+Copy code
+implementation 'org.springframework.kafka:spring-kafka'
+Configure Kafka Producer: Define the Kafka producer configuration in your application.properties or application.yml.
+
+application.properties:
+
+properties
+Copy code
+spring.kafka.bootstrap-servers=localhost:9092
+spring.kafka.producer.key-serializer=org.apache.kafka.common.serialization.StringSerializer
+spring.kafka.producer.value-serializer=org.apache.kafka.common.serialization.StringSerializer
+application.yml:
+
+yaml
+Copy code
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+Create a Kafka Producer Service: Implement a service to manage Kafka producers and check partitions.
+
+java
+Copy code
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.ListPartitionsResult;
+import org.apache.kafka.common.TopicPartitionInfo;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
-import java.util.HashSet;
+import java.util.concurrent.ExecutionException;
 
-public class KafkaProducerHealthCheck {
+@Service
+public class KafkaHealthService {
 
-    public static void main(String[] args) {
-        Properties props = new Properties();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+    @Value("${spring.kafka.bootstrap-servers}")
+    private String bootstrapServers;
 
-        KafkaProducer<String, String> producer = new KafkaProducer<>(props);
+    public String checkKafkaHealth(String... topics) {
+        try (AdminClient adminClient = AdminClient.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers))) {
+            for (String topic : topics) {
+                ListPartitionsResult partitionsResult = adminClient.listPartitions(Collections.singleton(topic));
+                Set<TopicPartitionInfo> partitions = partitionsResult.partitionInfos().get();
 
-        Set<String> topics = Set.of("topic1", "topic2", "topic3"); // Example topics
-        boolean allTopicsHealthy = checkTopicsHealth(producer, topics);
-
-        System.out.println("All topics healthy: " + allTopicsHealthy);
-
-        producer.close();
-    }
-
-    private static boolean checkTopicsHealth(KafkaProducer<String, String> producer, Set<String> topics) {
-        boolean allHealthy = true;
-
-        for (String topic : topics) {
-            try {
-                List<PartitionInfo> partitions = producer.partitionsFor(topic);
                 if (partitions == null || partitions.isEmpty()) {
-                    System.out.println("No partitions found for topic: " + topic);
-                    allHealthy = false;
-                } else {
-                    System.out.println("Partitions for topic " + topic + ": " + partitions);
+                    return "DOWN";
                 }
-            } catch (Exception e) {
-                System.out.println("Exception while checking topic " + topic + ": " + e.getMessage());
-                allHealthy = false;
             }
+        } catch (ExecutionException | InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return "DOWN";
         }
-
-        return allHealthy;
+        return "UP";
     }
 }
+Create a Health Indicator: Integrate with Spring Boot’s health check mechanism.
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
+java
+Copy code
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.stereotype.Component;
 
-import javax.sql.DataSource;
+@Component
+public class KafkaHealthIndicator implements HealthIndicator {
 
-@Configuration
-public class DataSourceConfig {
+    private final KafkaHealthService kafkaHealthService;
 
-    @Bean
-    public DataSource dataSource() {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        dataSource.setUrl("jdbc:mysql://localhost:3306/mydb");
-        dataSource.setUsername("myuser");
-        dataSource.setPassword("mypassword");
-        return dataSource;
+    public KafkaHealthIndicator(KafkaHealthService kafkaHealthService) {
+        this.kafkaHealthService = kafkaHealthService;
+    }
+
+    @Override
+    public Health health() {
+        String healthStatus = kafkaHealthService.checkKafkaHealth("topic1", "topic2"); // replace with your topics
+        if ("UP".equals(healthStatus)) {
+            return Health.up().build();
+        } else {
+            return Health.down().build();
+        }
     }
 }
+Run Your Application: With the above setup, the KafkaHealthIndicator will be included in the application’s health checks. You can check the health status via the /actuator/health endpoint.
 
+Make sure you have Spring Boot Actuator dependency if you want to expose health checks.
+
+Maven (pom.xml):
+
+xml
+Copy code
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+Gradle (build.gradle):
+
+groovy
+Copy code
+implementation 'org.springframework.boot:spring-boot-starter-actuator'
+Add Actuator configuration if necessary in application.properties or application.yml to expose the health endpoint.
+
+application.properties:
+
+properties
+Copy code
+management.endpoints.web.exposure.include=health
+application.yml:
+
+yaml
+Copy code
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+With these steps, your Spring Boot application should be able to check Kafka partition availability and provide health status through Actuator.
