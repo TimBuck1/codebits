@@ -1,33 +1,122 @@
-import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.common.config.TopicConfig;
-import java.util.Properties;
+java
+Copy code
+package com.example.common;
 
-public class KafkaAdminClientExample {
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 
-    public static void main(String[] args) {
-        // Create properties for the AdminClient
-        Properties config = new Properties();
-        config.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, "your-broker:9093");
-        config.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
+public interface CustomProducerListener<K, V> {
+    void onSuccess(ProducerRecord<K, V> record, RecordMetadata metadata);
 
-        // SSL Configurations
-        config.put("ssl.keystore.location", "/path/to/keystore.jks");
-        config.put("ssl.keystore.password", "keystore-password");
-        config.put("ssl.key.password", "key-password");
-        config.put("ssl.truststore.location", "/path/to/truststore.jks");
-        config.put("ssl.truststore.password", "truststore-password");
+    void onError(ProducerRecord<K, V> record, Exception exception);
+}
+Implementation of the Listener (BalanceProducerListener.java in Balance module):
 
-        // Optional: Verify hostname
-        config.put("ssl.endpoint.identification.algorithm", "https");
+java
+Copy code
+package com.example.balance;
 
-        // Create AdminClient instance
-        AdminClient adminClient = AdminClient.create(config);
+import com.example.common.CustomProducerListener;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 
-        // Use adminClient for operations
-        // ...
+public class BalanceProducerListener implements CustomProducerListener<String, String> {
 
-        // Close AdminClient when done
-        adminClient.close();
+    private volatile boolean producerHealthy = true;
+
+    @Override
+    public void onSuccess(ProducerRecord<String, String> record, RecordMetadata metadata) {
+        System.out.println("Balance message sent successfully to topic: " + record.topic());
+        producerHealthy = true; // Set healthy on success
+    }
+
+    @Override
+    public void onError(ProducerRecord<String, String> record, Exception exception) {
+        System.err.println("Failed to send balance message to topic: " + record.topic() + " due to: " + exception.getMessage());
+        producerHealthy = false; // Set unhealthy on error
+    }
+
+    public boolean isProducerHealthy() {
+        return producerHealthy;
+    }
+}
+Repeat a similar setup for the "Tax" module.
+
+2. Attach the Listener to Kafka Producers in "Balance" and "Tax" Modules
+When sending messages from your Kafka producers in the "Balance" and "Tax" modules, make sure to call the appropriate listener methods.
+
+Example Kafka Producer Code:
+
+java
+Copy code
+package com.example.balance;
+
+import com.example.common.CustomProducerListener;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
+
+import java.util.concurrent.Future;
+
+public class BalanceProducer {
+
+    private final KafkaProducer<String, String> producer;
+    private final CustomProducerListener<String, String> listener;
+
+    public BalanceProducer(KafkaProducer<String, String> producer, CustomProducerListener<String, String> listener) {
+        this.producer = producer;
+        this.listener = listener;
+    }
+
+    public void sendMessage(String topic, String key, String value) {
+        ProducerRecord<String, String> record = new ProducerRecord<>(topic, key, value);
+        try {
+            Future<RecordMetadata> future = producer.send(record);
+            RecordMetadata metadata = future.get(); // Blocking call, consider using callbacks for async
+            listener.onSuccess(record, metadata);
+        } catch (Exception e) {
+            listener.onError(record, e);
+        }
+    }
+}
+3. Query Health Status in Spring Boot Module ("Main")
+Use the custom listeners in the "Balance" and "Tax" modules to report health status to the Spring Boot module.
+
+Custom Health Indicator in Spring Boot (CustomHealthIndicator.java):
+
+java
+Copy code
+package com.example.main;
+
+import com.example.balance.BalanceProducerListener;
+import com.example.tax.TaxProducerListener;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CustomHealthIndicator implements HealthIndicator {
+
+    private final BalanceProducerListener balanceListener;
+    private final TaxProducerListener taxListener;
+
+    public CustomHealthIndicator(BalanceProducerListener balanceListener, TaxProducerListener taxListener) {
+        this.balanceListener = balanceListener;
+        this.taxListener = taxListener;
+    }
+
+    @Override
+    public Health health() {
+        boolean isBalanceHealthy = balanceListener.isProducerHealthy();
+        boolean isTaxHealthy = taxListener.isProducerHealthy();
+
+        if (isBalanceHealthy && isTaxHealthy) {
+            return Health.up().build();
+        } else {
+            return Health.down()
+                    .withDetail("balanceProducer", isBalanceHealthy ? "UP" : "DOWN")
+                    .withDetail("taxProducer", isTaxHealthy ? "UP" : "DOWN")
+                    .build();
+        }
     }
 }
