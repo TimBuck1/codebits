@@ -52,3 +52,7 @@ class BalanceProducerListenerTest {
         // Example: assert logs or use verify for some actions
     }
 }
+
+
+management.endpoints.web.exposure.include=health
+management.endpoint.health.show-details=always
