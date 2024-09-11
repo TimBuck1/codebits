@@ -1,1 +1,54 @@
 
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+class BalanceProducerListenerTest {
+
+    @InjectMocks
+    private BalanceProducerListener balanceProducerListener;
+
+    @Mock
+    private ProducerRecord<String, String> producerRecord;
+
+    @Mock
+    private RecordMetadata recordMetadata;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    void testOnSuccess() {
+        // Arrange
+        // Mocking necessary inputs if needed
+
+        // Act
+        balanceProducerListener.onSuccess(producerRecord, recordMetadata);
+
+        // Assert
+        // You can verify interactions or state changes if necessary
+        // Example: assert logs or use verify for some actions
+    }
+
+    @Test
+    void testOnError() {
+        // Arrange
+        Exception exception = new RuntimeException("Test Exception");
+
+        // Act
+        balanceProducerListener.onError(producerRecord, recordMetadata, exception);
+
+        // Assert
+        // Verify that the error handling logic is executed correctly
+        // Example: assert logs or use verify for some actions
+    }
+}
