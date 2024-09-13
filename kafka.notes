@@ -17,3 +17,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+
+healthcheck:
+      test: ["CMD-SHELL", "curl -Iks https://localhost:8097/actuator/health || curl -Is http://localhost:8097/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
