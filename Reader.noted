@@ -1,1 +1,19 @@
+const columnDefs = [
+    {
+        headerName: "Example Column",
+        field: "exampleField",
+        valueGetter: function(params) {
+            const value = params.data.exampleField;
+            console.log('Value from valueGetter:', value); // Debugging statement
+            return value || 'Default Value';
+        },
+        valueFormatter: function(params) {
+            console.log('Value in valueFormatter:', params.value); // Debugging statement
+            if (params.value === null || params.value === undefined) {
+                return 'No Value';
+            }
+            return params.value.toString();
+        }
+    }
+];
 
