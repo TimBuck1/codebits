@@ -1,3 +1,6 @@
 -- Convert businessdate to DATE if necessary
 SELECT TO_DATE(businessdate, 'YYYY-MM-DD') - INTERVAL '1' DAY AS enddate
 FROM your_table;
+
+
+In AG Grid, the valueSetter function is called whenever you try to update the value of a cell, typically through user input or programmatically when editing is enabled. The valueSetter is responsible for taking the new value and updating the data model in the grid
