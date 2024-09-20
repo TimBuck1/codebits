@@ -29,3 +29,6 @@ COPY keystore.jks /opt/app/config/
 
 # Then in application.properties
 server.ssl.key-store=file:/opt/app/config/keystore.jks
+
+java -jar your-app.jar --spring.config.additional-location=file:/path/to/external.conf
+
