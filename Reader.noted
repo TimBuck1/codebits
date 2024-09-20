@@ -2,5 +2,25 @@
 SELECT TO_DATE(businessdate, 'YYYY-MM-DD') - INTERVAL '1' DAY AS enddate
 FROM your_table;
 
+properties
+Copy code
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
+In your Dockerfile, do not hardcode the credentials. Instead, pass them in at runtime:
 
-In AG Grid, the valueSetter function is called whenever you try to update the value of a cell, typically through user input or programmatically when editing is enabled. The valueSetter is responsible for taking the new value and updating the data model in the grid
+dockerfile
+Copy code
+FROM openjdk:11-jre-slim
+COPY target/your-app.jar /app/your-app.jar
+ENTRYPOINT ["java", "-jar", "/app/your-app.jar"]
+In your docker-compose.yml (if using Docker Compose) or when running docker run, pass the credentials as environment variables:
+
+yaml
+Copy code
+version: '3.8'
+services:
+  app:
+    image: your-app-image
+    environment:
+      - DB_USERNAME=your-username
+      - DB_PASSWORD=your-password
