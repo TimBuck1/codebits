@@ -24,3 +24,8 @@ services:
     environment:
       - DB_USERNAME=your-username
       - DB_PASSWORD=your-password
+
+COPY keystore.jks /opt/app/config/
+
+# Then in application.properties
+server.ssl.key-store=file:/opt/app/config/keystore.jks
