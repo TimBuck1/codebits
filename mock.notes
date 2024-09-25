@@ -1,1 +1,42 @@
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+public class CoordinatorServiceV1 implements TransactionCompletionListener {
+
+    private final ConcurrentHashMap<String, AtomicBoolean> moduleBCompletedMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, AtomicBoolean> moduleCCompletedMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, String> amountsB = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, String> amountsC = new ConcurrentHashMap<>();
+    private final DatabaseService databaseService;
+
+    public CoordinatorServiceV1(DatabaseService databaseService) {
+        this.databaseService = databaseService;
+    }
+
+    @Override
+    public void onTransactionComplete(String moduleName, String taxId, String amount) {
+        if ("ModuleB".equals(moduleName)) {
+            moduleBCompletedMap.computeIfAbsent(taxId, key -> new AtomicBoolean(true));
+            amountsB.put(taxId, amount);  // Store ReportedAmountB
+        } else if ("ModuleC".equals(moduleName)) {
+            moduleCCompletedMap.computeIfAbsent(taxId, key -> new AtomicBoolean(true));
+            amountsC.put(taxId, amount);  // Store ReportedAmountC
+        }
+
+        // Atomically check if both Module B and Module C have completed for the same taxId
+        if (moduleBCompletedMap.containsKey(taxId) && moduleCCompletedMap.containsKey(taxId)) {
+            String amountB = amountsB.get(taxId);
+            String amountC = amountsC.get(taxId);
+
+            // Both have completed, safely update the database for this taxId
+            databaseService.updateDatabase(taxId, amountB, amountC);
+
+            // Clean up the maps for this taxId after processing
+            moduleBCompletedMap.remove(taxId);
+            moduleCCompletedMap.remove(taxId);
+            amountsB.remove(taxId);
+            amountsC.remove(taxId);
+        }
+    }
+}
 
