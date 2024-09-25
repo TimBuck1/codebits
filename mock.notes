@@ -1,1 +1,28 @@
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
+public class BigDecimalConverter {
+
+    public static BigDecimal fromBigDecimalValue(BigDecimalValue bigDecimalValue) {
+        // Extract the scale, precision, and value from the protobuf message
+        int scale = bigDecimalValue.getScale();
+        int precision = bigDecimalValue.getPrecision();
+        byte[] unscaledValueBytes = bigDecimalValue.getValue().toByteArray();
+
+        // Convert the byte array to a BigInteger (unscaled value)
+        BigInteger unscaledValue = new BigInteger(unscaledValueBytes);
+
+        // Create the BigDecimal with the unscaled value and scale
+        BigDecimal bigDecimal = new BigDecimal(unscaledValue, scale);
+
+        // Optionally validate precision (if required by the application)
+        if (bigDecimal.precision() > precision) {
+            throw new IllegalArgumentException("Precision mismatch: Expected precision " + precision +
+                                               " but got " + bigDecimal.precision());
+        }
+
+        // Return the constructed BigDecimal
+        return bigDecimal;
+    }
+}
 
