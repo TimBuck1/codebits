@@ -46,3 +46,4 @@ public class KafkaMessageProducerTest {
         assertThrows(InterruptedException.class, () -> kafkaMessageProducer.sendMessage("test-topic", "test-message"));
     }
 }
+kafka-acls.sh --bootstrap-server <broker:port> --remove --allow-principal User:<user> --producer --topic <topic-name>
