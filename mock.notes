@@ -1,6 +1,48 @@
-import java.math.BigDecimal;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
+import org.springframework.util.concurrent.ListenableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.InterruptedException;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.*;
 
-public record Transaction(BigDecimal amount, String status, String action) {}
+public class KafkaMessageProducerTest {
 
+    @Mock
+    private KafkaTemplate<String, String> kafkaTemplate;
 
- Transaction transaction = new Transaction(amount, status, action);
+    @Mock
+    private ListenableFuture<SendResult<String, String>> listenableFuture;
+
+    private KafkaMessageProducer kafkaMessageProducer;
+
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+        kafkaMessageProducer = new KafkaMessageProducer(kafkaTemplate);
+    }
+
+    @Test
+    public void testSendMessage_ThrowsExecutionException() throws ExecutionException, InterruptedException {
+        // Arrange: Simulate ExecutionException
+        when(kafkaTemplate.send(anyString(), anyString())).thenReturn(listenableFuture);
+        when(listenableFuture.get()).thenThrow(new ExecutionException(new Throwable("ExecutionException occurred")));
+
+        // Act & Assert: Verify that ExecutionException is thrown
+        assertThrows(ExecutionException.class, () -> kafkaMessageProducer.sendMessage("test-topic", "test-message"));
+    }
+
+    @Test
+    public void testSendMessage_ThrowsInterruptedException() throws ExecutionException, InterruptedException {
+        // Arrange: Simulate InterruptedException
+        when(kafkaTemplate.send(anyString(), anyString())).thenReturn(listenableFuture);
+        when(listenableFuture.get()).thenThrow(new InterruptedException("InterruptedException occurred"));
+
+        // Act & Assert: Verify that InterruptedException is thrown
+        assertThrows(InterruptedException.class, () -> kafkaMessageProducer.sendMessage("test-topic", "test-message"));
+    }
+}
