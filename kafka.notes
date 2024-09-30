@@ -1,42 +1,45 @@
-# Kafka bootstrap servers
-spring.kafka.bootstrap-servers=localhost:9093
-spring.kafka.admin.properties.bootstrap.servers=localhost:9093
-
-# Security protocol
-spring.kafka.properties.security.protocol=SSL
-spring.kafka.admin.properties.security.protocol=SSL
-
-# SSL configuration
-spring.kafka.properties.ssl.truststore.location=/path/to/kafka.truststore.jks
-spring.kafka.properties.ssl.truststore.password=yourTrustStorePassword
-spring.kafka.properties.ssl.keystore.location=/path/to/kafka.keystore.jks
-spring.kafka.properties.ssl.keystore.password=yourKeyStorePassword
-spring.kafka.properties.ssl.key.password=yourKeyPassword
-
-# Admin client specific SSL configuration (if needed)
-spring.kafka.admin.properties.ssl.truststore.location=/path/to/kafka.truststore.jks
-spring.kafka.admin.properties.ssl.truststore.password=yourTrustStorePassword
-spring.kafka.admin.properties.ssl.keystore.location=/path/to/kafka.keystore.jks
-spring.kafka.admin.properties.ssl.keystore.password=yourKeyStorePassword
-spring.kafka.admin.properties.ssl.key.password=yourKeyPassword
-
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.NewTopic;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaAdmin;
+import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.Properties;
+import java.util.concurrent.ExecutionException;
 
-public class KafkaAdminClientConfig {
+@Service
+public class KafkaTopicService {
 
-    public static AdminClient createAdminClient() {
+    private final KafkaAdmin kafkaAdmin;
+
+    public KafkaTopicService(KafkaAdmin kafkaAdmin) {
+        this.kafkaAdmin = kafkaAdmin;
+    }
+
+    // Method to create a topic
+    public String createTopic(String topicName, int numPartitions, short replicationFactor) {
         Properties props = new Properties();
-        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9093");
-        props.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
-        props.put("ssl.truststore.location", "/path/to/kafka.truststore.jks");
-        props.put("ssl.truststore.password", "yourTrustStorePassword");
-        props.put("ssl.keystore.location", "/path/to/kafka.keystore.jks");
-        props.put("ssl.keystore.password", "yourKeyStorePassword");
-        props.put("ssl.key.password", "yourKeyPassword");
+        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaAdmin.getConfigurationProperties().get("bootstrap.servers"));
         
-        return AdminClient.create(props);
+        try (AdminClient adminClient = AdminClient.create(props)) {
+            NewTopic newTopic = new NewTopic(topicName, numPartitions, replicationFactor);
+            adminClient.createTopics(Collections.singletonList(newTopic)).all().get();
+            return "Topic '" + topicName + "' created successfully.";
+        } catch (InterruptedException | ExecutionException e) {
+            return "Failed to create topic: " + e.getMessage();
+        }
     }
 }
+
+
+  @PostMapping("/create-topic")
+    public ResponseEntity<String> createTopic(
+            @RequestParam String topicName,
+            @RequestParam(defaultValue = "1") int numPartitions,
+            @RequestParam(defaultValue = "1") short replicationFactor) {
+
+        String response = kafkaTopicService.createTopic(topicName, numPartitions, replicationFactor);
+        return ResponseEntity.ok(response);
+    }
