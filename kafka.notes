@@ -19,3 +19,24 @@ spring.kafka.admin.properties.ssl.truststore.password=yourTrustStorePassword
 spring.kafka.admin.properties.ssl.keystore.location=/path/to/kafka.keystore.jks
 spring.kafka.admin.properties.ssl.keystore.password=yourKeyStorePassword
 spring.kafka.admin.properties.ssl.key.password=yourKeyPassword
+
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+
+import java.util.Properties;
+
+public class KafkaAdminClientConfig {
+
+    public static AdminClient createAdminClient() {
+        Properties props = new Properties();
+        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9093");
+        props.put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
+        props.put("ssl.truststore.location", "/path/to/kafka.truststore.jks");
+        props.put("ssl.truststore.password", "yourTrustStorePassword");
+        props.put("ssl.keystore.location", "/path/to/kafka.keystore.jks");
+        props.put("ssl.keystore.password", "yourKeyStorePassword");
+        props.put("ssl.key.password", "yourKeyPassword");
+        
+        return AdminClient.create(props);
+    }
+}
