@@ -1,27 +1,21 @@
-    environment:
-      - LOGGING_CONFIG=/opt/app/config/logback.xml
+# Kafka bootstrap servers
+spring.kafka.bootstrap-servers=localhost:9093
+spring.kafka.admin.properties.bootstrap.servers=localhost:9093
 
+# Security protocol
+spring.kafka.properties.security.protocol=SSL
+spring.kafka.admin.properties.security.protocol=SSL
 
-version: '3.8'
+# SSL configuration
+spring.kafka.properties.ssl.truststore.location=/path/to/kafka.truststore.jks
+spring.kafka.properties.ssl.truststore.password=yourTrustStorePassword
+spring.kafka.properties.ssl.keystore.location=/path/to/kafka.keystore.jks
+spring.kafka.properties.ssl.keystore.password=yourKeyStorePassword
+spring.kafka.properties.ssl.key.password=yourKeyPassword
 
-services:
-  taxengine:
-    image: my-spring-boot-app:latest
-    ports:
-      - "8097:8097"
-    environment:
-      - PROTOCOL_FLAG=https # Set this to 'http' or 'https' based on your configuration
-    healthcheck:
-      test: ["CMD-SHELL", "if [ \"$PROTOCOL_FLAG\" = \"https\" ]; then curl -Iks https://localhost:8097/actuator/health; else curl -Is http://localhost:8097/actuator/health; fi"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-
-healthcheck:
-      test: ["CMD-SHELL", "curl -Iks https://localhost:8097/actuator/health || curl -Is http://localhost:8097/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+# Admin client specific SSL configuration (if needed)
+spring.kafka.admin.properties.ssl.truststore.location=/path/to/kafka.truststore.jks
+spring.kafka.admin.properties.ssl.truststore.password=yourTrustStorePassword
+spring.kafka.admin.properties.ssl.keystore.location=/path/to/kafka.keystore.jks
+spring.kafka.admin.properties.ssl.keystore.password=yourKeyStorePassword
+spring.kafka.admin.properties.ssl.key.password=yourKeyPassword
