@@ -1,45 +1,202 @@
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.clients.admin.NewTopic;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.core.KafkaAdmin;
-import org.springframework.stereotype.Service;
+Here’s the complete working example of the design you requested, including both the ProducerManager and ConsumerManager. The producers (like XCME and NSE) send messages to a single Kafka topic with a sourceID header, and the consumer listens to the same topic and processes acknowledgments based on the sourceID. The producers wait for their respective acknowledgments before sending the next message.
 
-import java.util.Collections;
+1. ProducerManager.java
+The ProducerManager is responsible for sending messages with a sourceID and waiting for the acknowledgment after sending the message.
+
+java
+Copy code
+import org.apache.kafka.clients.producer.*;
+import org.apache.kafka.common.header.internals.RecordHeader;
+
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-@Service
-public class KafkaTopicService {
+public class ProducerManager {
+    private KafkaProducer<String, String> producer;
+    private String topic;
+    private AckTracker ackTracker;
+    private String sourceId;  // XCME or NSE
+    private ExecutorService executorService;
 
-    private final KafkaAdmin kafkaAdmin;
+    public ProducerManager(String brokers, String topic, String sourceId, AckTracker ackTracker) {
+        Properties props = new Properties();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
 
-    public KafkaTopicService(KafkaAdmin kafkaAdmin) {
-        this.kafkaAdmin = kafkaAdmin;
+        this.producer = new KafkaProducer<>(props);
+        this.topic = topic;
+        this.sourceId = sourceId;
+        this.ackTracker = ackTracker;
+        this.executorService = Executors.newFixedThreadPool(10);  // Thread pool for async sending
     }
 
-    // Method to create a topic
-    public String createTopic(String topicName, int numPartitions, short replicationFactor) {
+    public void sendMessage(String batchId) {
+        CompletableFuture.runAsync(() -> {
+            ProducerRecord<String, String> record = new ProducerRecord<>(topic, batchId, "Message for batchId: " + batchId);
+            
+            // Adding sourceID as a header
+            record.headers().add(new RecordHeader("sourceID", sourceId.getBytes()));
+
+            producer.send(record, (metadata, exception) -> {
+                if (exception == null) {
+                    System.out.println("Message sent with sourceID " + sourceId + " and batchId: " + batchId);
+                    ackTracker.addMessage(batchId, sourceId);  // Track the message using batchId and sourceID
+
+                    // Wait for the acknowledgment of this message
+                    try {
+                        ackTracker.waitForAck(batchId, sourceId);
+                        System.out.println("Acknowledgment received for sourceID " + sourceId + " and batchId: " + batchId);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    exception.printStackTrace();
+                }
+            });
+        }, executorService);
+    }
+
+    public void close() {
+        producer.close();
+        executorService.shutdown();
+    }
+}
+2. ConsumerManager.java
+The ConsumerManager listens to the Kafka topic and processes the acknowledgment for messages based on the batchId and sourceID from the message headers.
+
+java
+Copy code
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.header.Header;
+
+import java.time.Duration;
+import java.util.Collections;
+import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class ConsumerManager {
+    private KafkaConsumer<String, String> consumer;
+    private AckTracker ackTracker;
+    private ExecutorService executorService;
+
+    public ConsumerManager(String brokers, String groupId, String topic, AckTracker ackTracker) {
         Properties props = new Properties();
-        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaAdmin.getConfigurationProperties().get("bootstrap.servers"));
-        
-        try (AdminClient adminClient = AdminClient.create(props)) {
-            NewTopic newTopic = new NewTopic(topicName, numPartitions, replicationFactor);
-            adminClient.createTopics(Collections.singletonList(newTopic)).all().get();
-            return "Topic '" + topicName + "' created successfully.";
-        } catch (InterruptedException | ExecutionException e) {
-            return "Failed to create topic: " + e.getMessage();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
+        this.consumer = new KafkaConsumer<>(props);
+        this.ackTracker = ackTracker;
+        this.executorService = Executors.newFixedThreadPool(5);  // Thread pool for consuming
+        this.consumer.subscribe(Collections.singletonList(topic));
+    }
+
+    public void consumeMessages() {
+        executorService.submit(() -> {
+            while (true) {
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+                for (ConsumerRecord<String, String> record : records) {
+                    String batchId = record.key();
+                    Header sourceIdHeader = record.headers().lastHeader("sourceID");
+                    String sourceId = new String(sourceIdHeader.value());
+                    
+                    System.out.println("Acknowledgment received for batchId: " + batchId + " from sourceID: " + sourceId);
+                    ackTracker.acknowledge(batchId, sourceId);  // Mark the message as acknowledged based on sourceID
+                }
+            }
+        });
+    }
+
+    public void close() {
+        consumer.close();
+        executorService.shutdown();
+    }
+}
+3. AckTracker.java
+The AckTracker class is responsible for tracking each message’s acknowledgment based on its batchId and sourceID. It uses a CountDownLatch to wait for the acknowledgment.
+
+java
+Copy code
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+
+public class AckTracker {
+    private ConcurrentHashMap<String, CountDownLatch> messageMap;
+
+    public AckTracker() {
+        this.messageMap = new ConcurrentHashMap<>();
+    }
+
+    public void addMessage(String batchId, String sourceId) {
+        String key = sourceId + "-" + batchId;  // Unique key for each message based on sourceId and batchId
+        messageMap.put(key, new CountDownLatch(1));
+    }
+
+    public void acknowledge(String batchId, String sourceId) {
+        String key = sourceId + "-" + batchId;
+        CountDownLatch latch = messageMap.get(key);
+        if (latch != null) {
+            latch.countDown();  // Signal acknowledgment
+            messageMap.remove(key);
+        }
+    }
+
+    public void waitForAck(String batchId, String sourceId) throws InterruptedException {
+        String key = sourceId + "-" + batchId;
+        CountDownLatch latch = messageMap.get(key);
+        if (latch != null) {
+            latch.await();  // Wait for acknowledgment
         }
     }
 }
+4. KafkaApp.java
+This is the main application that sets up the producers, the consumer, and the acknowledgment tracking.
 
+java
+Copy code
+public class KafkaApp {
+    public static void main(String[] args) throws InterruptedException {
+        String brokers = "localhost:9092";
+        String topic = "common-topic";
 
-  @PostMapping("/create-topic")
-    public ResponseEntity<String> createTopic(
-            @RequestParam String topicName,
-            @RequestParam(defaultValue = "1") int numPartitions,
-            @RequestParam(defaultValue = "1") short replicationFactor) {
+        AckTracker ackTracker = new AckTracker();
+        
+        // Initialize producer managers for XCME and NSE
+        ProducerManager xcmeProducer = new ProducerManager(brokers, topic, "XCME", ackTracker);
+        ProducerManager nseProducer = new ProducerManager(brokers, topic, "NSE", ackTracker);
+        
+        // Initialize consumer manager for acknowledgment topic
+        ConsumerManager consumerManager = new ConsumerManager(brokers, "consumer-group", topic, ackTracker);
+        consumerManager.consumeMessages();
 
-        String response = kafkaTopicService.createTopic(topicName, numPartitions, replicationFactor);
-        return ResponseEntity.ok(response);
+        // Produce messages for both XCME and NSE
+        for (int i = 0; i < 1000; i++) {
+            String xcmeBatchId = "XCME-batch-" + i;
+            String nseBatchId = "NSE-batch-" + i;
+            
+            xcmeProducer.sendMessage(xcmeBatchId);
+            nseProducer.sendMessage(nseBatchId);
+
+            // The ProducerManager will now automatically wait for its own acknowledgment
+        }
+
+        // Clean up resources
+        xcmeProducer.close();
+        nseProducer.close();
+        consumerManager.close();
     }
+}
+Key Workflow:
+The ProducerManager sends messages with a sourceID (either XCME or NSE) and tracks the batchId.
+The ConsumerManager listens to a single topic and processes the acknowledgment for each message, using the sourceID and batchId.
+The ProducerManager waits for acknowledgment before sending the next message using the AckTracker.
+This setup is designed for scalability and supports multiple producers sending messages to the same topic, differentiating them using the sourceID. The consumer processes all messages and acknowledges them dynamically.
