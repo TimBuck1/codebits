@@ -130,3 +130,22 @@ LEFT JOIN (
     JOIN et ON ppg.id = et.id
     GROUP BY c.id
 ) agg ON etd.id = agg.id;
+
+
+
+WITH agg AS (
+    SELECT 
+        c.id,
+        STRING_AGG(DISTINCT a.name, ',' ORDER BY a.name) AS aname,
+        STRING_AGG(DISTINCT b.name, ',' ORDER BY b.name) AS bname
+    FROM 
+        a
+    JOIN b ON b.id = a.id AND a.group = 'ch'
+    JOIN ppg ON ppg.pid = a.id
+    JOIN et ON ppg.id = et.id
+    GROUP BY c.id
+)
+SELECT etd.*, agg.aname, agg.bname
+FROM etd
+LEFT JOIN agg ON etd.id = agg.id;
+
