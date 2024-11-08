@@ -1,1 +1,16 @@
 
+SELECT 
+    (SELECT GROUP_CONCAT(DISTINCT a.name ORDER BY a.name SEPARATOR ',') FROM a WHERE a.group = 'ch' AND a.id = b.id) AS aname,
+    GROUP_CONCAT(DISTINCT b.name ORDER BY b.name SEPARATOR ',') AS bname,
+    c.code,
+    c.id AS id
+FROM 
+    b
+JOIN 
+    a ON b.id = a.id AND a.group = 'ch'
+JOIN 
+    ppg ON ppg.pid = a.id
+JOIN 
+    et ON ppg.id = et.id
+GROUP BY 
+    c.code, c.id;
