@@ -27,6 +27,26 @@ WITH agg AS (
     JOIN 
         b ON b.id = a.id AND a.group = 'ch'
     JOIN 
+
+SELECT 
+    p.*,
+    (SELECT GROUP_CONCAT(DISTINCT a.name ORDER BY a.name SEPARATOR ',') 
+        FROM a 
+        JOIN b ON b.id = a.id AND a.group = 'ch'
+        JOIN ppg ON ppg.pid = a.id
+        JOIN et ON ppg.id = et.id
+        WHERE c.id = p.id
+    ) AS aname,
+    (SELECT GROUP_CONCAT(DISTINCT b.name ORDER BY b.name SEPARATOR ',') 
+        FROM a 
+        JOIN b ON b.id = a.id AND a.group = 'ch'
+        JOIN ppg ON ppg.pid = a.id
+        JOIN et ON ppg.id = et.id
+        WHERE c.id = p.id
+    ) AS bname
+FROM 
+    p
+
         ppg ON ppg.pid = a.id
     JOIN 
         et ON ppg.id = et.id
