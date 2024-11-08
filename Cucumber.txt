@@ -14,3 +14,30 @@ JOIN
     et ON ppg.id = et.id
 GROUP BY 
     c.code, c.id;
+
+
+WITH agg AS (
+    SELECT 
+        GROUP_CONCAT(DISTINCT a.name ORDER BY a.name SEPARATOR ',') AS aname,
+        GROUP_CONCAT(DISTINCT b.name ORDER BY b.name SEPARATOR ',') AS bname,
+        c.code,
+        c.id AS id
+    FROM 
+        a
+    JOIN 
+        b ON b.id = a.id AND a.group = 'ch'
+    JOIN 
+        ppg ON ppg.pid = a.id
+    JOIN 
+        et ON ppg.id = et.id
+    GROUP BY 
+        c.code, c.id
+)
+SELECT 
+    p.*, 
+    agg.aname, 
+    agg.bname 
+FROM 
+    p
+LEFT JOIN 
+    agg ON p.id = agg.id;
