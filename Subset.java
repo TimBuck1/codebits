@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-toy-group-selector',
@@ -7,9 +8,9 @@ import { of } from 'rxjs';
   styleUrls: ['./toy-group-selector.component.css']
 })
 export class ToyGroupSelectorComponent {
-  visibleCities: { value: string; disabled: boolean }[] = []; // Visible dropdown options
+  updatedCities$: Observable<{ value: string; disabled: boolean }[]>;
 
-  // Simulate the observable provided by getOptions()
+  // Original cities object
   cities = {
     getOptions: () => {
       return of([
@@ -21,39 +22,33 @@ export class ToyGroupSelectorComponent {
   };
 
   constructor() {
-    this.loadCities(); // Initialize cities
+    // Initialize updatedCities$ with the original options
+    this.updatedCities$ = this.cities.getOptions();
   }
 
-  // Load cities from the observable
-  loadCities() {
-    this.cities.getOptions().subscribe((data) => {
-      this.visibleCities = data;
-    });
-  }
-
-  // Update cities dynamically based on the selected toyType
+  // Update the options dynamically based on the selected toyType
   onToyTypeChange(toyType: string) {
-    this.loadCities(); // Reset all to their initial state
+    this.updatedCities$ = this.cities.getOptions().pipe(
+      map((cities) =>
+        cities.map((city) => ({
+          ...city,
+          disabled: !this.shouldEnableCity(city.value, toyType) // Enable only the required city
+        }))
+      )
+    );
+  }
 
-    // Enable the relevant option
+  // Helper function to determine if a city should be enabled
+  shouldEnableCity(cityValue: string, toyType: string): boolean {
     switch (toyType) {
       case 'marshal':
-        this.enableCity('A');
-        break;
+        return cityValue === 'A';
       case 'tom':
-        this.enableCity('B');
-        break;
+        return cityValue === 'B';
       case 'jerry':
-        this.enableCity('C');
-        break;
-    }
-  }
-
-  // Helper method to enable a specific city
-  enableCity(cityValue: string) {
-    const city = this.visibleCities.find((c) => c.value === cityValue);
-    if (city) {
-      city.disabled = false;
+        return cityValue === 'C';
+      default:
+        return false;
     }
   }
 }
