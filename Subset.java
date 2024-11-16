@@ -1,19 +1,26 @@
 onToyTypeChange(toyType: string) {
-  this.updatedCities$ = this.cities.getOptions().pipe(
+  const params: SelectionParams = {}; // Add any necessary params here, if needed
+
+  this.updatedCities$ = this.cities.getOptions(params).pipe(
     map((cities) => {
       return cities.map((city) => {
+        // Remove `disabled` property for the enabled city
         if (
           (toyType === 'marshal' && city.value === 'A') ||
           (toyType === 'tom' && city.value === 'B') ||
           (toyType === 'jerry' && city.value === 'C')
         ) {
-          const { disabled, ...enabledCity } = city; // Remove 'disabled'
+          const { disabled, ...enabledCity } = city; // Remove `disabled` property
           return enabledCity;
         } else {
-          return { ...city, disabled: true }; // Add 'disabled'
+          return { ...city, disabled: true }; // Add `disabled` property
         }
       });
-    }),
-    map((updatedCities) => [...updatedCities]) // Create a new array reference
+    })
+  );
+
+  // Debug: Log the updated cities
+  this.updatedCities$.subscribe((updatedCities) =>
+    console.log('Updated Cities:', updatedCities)
   );
 }
