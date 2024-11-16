@@ -1,54 +1,28 @@
-import { Component } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+onToyTypeChange(toyType: string) {
+  // Update the observable by applying logic to modify the emitted values
+  this.updatedCities$ = this.cities.getOptions().pipe(
+    map((cities) => {
+      console.log('Original Cities:', cities); // Log the original array for debugging
+      return cities.map((city) => {
+        // Enable or disable based on the toyType
+        if (toyType === 'marshal' && city.value === 'A') {
+          console.log(`Enabling City: ${city.value}`); // Log when enabling
+          return { ...city, disabled: false };
+        } else if (toyType === 'tom' && city.value === 'B') {
+          console.log(`Enabling City: ${city.value}`); // Log when enabling
+          return { ...city, disabled: false };
+        } else if (toyType === 'jerry' && city.value === 'C') {
+          console.log(`Enabling City: ${city.value}`); // Log when enabling
+          return { ...city, disabled: false };
+        } else {
+          return { ...city, disabled: true }; // Keep others disabled
+        }
+      });
+    })
+  );
 
-@Component({
-  selector: 'app-toy-group-selector',
-  templateUrl: './toy-group-selector.component.html',
-  styleUrls: ['./toy-group-selector.component.css']
-})
-export class ToyGroupSelectorComponent {
-  updatedCities$: Observable<{ value: string; disabled: boolean }[]>;
-
-  // Original cities object
-  cities = {
-    getOptions: () => {
-      return of([
-        { value: 'A', disabled: true },
-        { value: 'B', disabled: true },
-        { value: 'C', disabled: true }
-      ]);
-    }
-  };
-
-  constructor() {
-    // Initialize updatedCities$ with the original options
-    this.updatedCities$ = this.cities.getOptions();
-  }
-
-  // Update the options dynamically based on the selected toyType
-  onToyTypeChange(toyType: string) {
-    this.updatedCities$ = this.cities.getOptions().pipe(
-      map((cities) =>
-        cities.map((city) => ({
-          ...city,
-          disabled: !this.shouldEnableCity(city.value, toyType) // Enable only the required city
-        }))
-      )
-    );
-  }
-
-  // Helper function to determine if a city should be enabled
-  shouldEnableCity(cityValue: string, toyType: string): boolean {
-    switch (toyType) {
-      case 'marshal':
-        return cityValue === 'A';
-      case 'tom':
-        return cityValue === 'B';
-      case 'jerry':
-        return cityValue === 'C';
-      default:
-        return false;
-    }
-  }
+  // For debugging, subscribe temporarily to print the transformed data
+  this.updatedCities$.subscribe((updatedCities) =>
+    console.log('Updated Cities:', updatedCities)
+  );
 }
