@@ -19,6 +19,7 @@ export class DropdownComponent implements OnInit {
   // Simulate the received value that will enable/disable options
   selectedDatasource: string = 'B';  // This could come dynamically
 
+  originalOptions: { value: string, disabled: boolean }[] = [];
   modifiedOptions: { value: string, disabled: boolean }[];
 
   constructor() {
@@ -35,18 +36,19 @@ export class DropdownComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Fetch and modify the options when the component initializes
-    this.options.getOptions().pipe(
-      map(options => {
-        // Modify the options based on the selected value
-        return options.map(option => {
-          // Disable everything except the selectedDatasource
-          option.disabled = option.value !== this.selectedDatasource;
-          return option;
-        });
-      })
-    ).subscribe(modifiedOptions => {
-      this.modifiedOptions = modifiedOptions;  // Store the modified list
+    // Fetch and store the original options when the component initializes
+    this.options.getOptions().subscribe(options => {
+      this.originalOptions = options;  // Store original options
+      this.modifyOptions(options);    // Initially modify options
+    });
+  }
+
+  // Modify the options to enable/disable them based on the selected value
+  modifyOptions(options: { value: string, disabled: boolean }[]): void {
+    this.modifiedOptions = options.map(option => {
+      // Disable everything except the selectedDatasource
+      option.disabled = option.value !== this.selectedDatasource;
+      return option;
     });
   }
 
@@ -54,16 +56,7 @@ export class DropdownComponent implements OnInit {
   updateSelectedDatasource(newValue: string): void {
     this.selectedDatasource = newValue;
 
-    // Re-modify the options whenever the selected value changes
-    this.options.getOptions().pipe(
-      map(options => {
-        return options.map(option => {
-          option.disabled = option.value !== this.selectedDatasource;
-          return option;
-        });
-      })
-    ).subscribe(modifiedOptions => {
-      this.modifiedOptions = modifiedOptions;
-    });
+    // Use the original options and apply modifications based on the new selected value
+    this.modifyOptions(this.originalOptions);
   }
 }
