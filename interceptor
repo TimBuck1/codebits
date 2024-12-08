@@ -1,1 +1,80 @@
  
+To mark the task as done when all the chunks (or tasks) have been processed, you can use a CountDownLatch or CompletableFuture to track the completion of all tasks. Both methods allow you to wait for all threads to complete before marking the task as done.
+
+Solution Using CountDownLatch:
+A CountDownLatch can be used to wait for all tasks to complete before proceeding.
+
+Here's how you can implement it:
+
+java
+Copy code
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.*;
+
+public class ChunkProcessingExample {
+    public static void main(String[] args) throws InterruptedException {
+        List<String> items = IntStream.range(1, 101)
+            .mapToObj(i -> "Item-" + i)
+            .collect(Collectors.toList());
+
+        int chunkSize = 25;
+
+        // Split the list into chunks
+        List<List<String>> chunks = IntStream.range(0, (items.size() + chunkSize - 1) / chunkSize)
+            .mapToObj(i -> items.subList(i * chunkSize, Math.min((i + 1) * chunkSize, items.size())))
+            .collect(Collectors.toList());
+
+        // Create a CountDownLatch for tracking completion
+        CountDownLatch latch = new CountDownLatch(chunks.size());
+
+        // Process each chunk in a separate thread
+        ExecutorService executor = Executors.newFixedThreadPool(chunks.size());
+
+        chunks.forEach(chunk -> 
+            executor.submit(() -> {
+                try {
+                    processChunk(chunk); // Replace with your actual processing logic
+                } finally {
+                    latch.countDown(); // Decrease count when task is done
+                }
+            })
+        );
+
+        // Wait for all tasks to complete
+        latch.await();
+        executor.shutdown();
+
+        // Mark task as done after all chunks have been processed
+        System.out.println("All chunks processed. Task is marked as done.");
+    }
+
+    private static void processChunk(List<String> chunk) {
+        System.out.println("Processing chunk: " + chunk);
+        // Add processing logic here (simulate delay if needed)
+        try {
+            Thread.sleep(1000); // Simulate processing delay
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+}
+Explanation:
+CountDownLatch:
+The CountDownLatch is initialized with the number of chunks (latch = new CountDownLatch(chunks.size())).
+Each time a chunk is processed, the latch is decremented using latch.countDown().
+await():
+The await() method is called to block the main thread until all tasks (chunks) have been processed. This ensures that the task is only marked as "done" after all chunks are finished.
+shutdown():
+The thread pool is properly shut down using executor.shutdown() once all tasks are completed.
+Output:
+mathematica
+Copy code
+Processing chunk: [Item-1, Item-2, ..., Item-25]
+Processing chunk: [Item-26, Item-27, ..., Item-50]
+...
+Processing chunk: [Item-76, Item-77, ..., Item-100]
+All chunks processed. Task is marked as done.
+Benefits:
+Synchronization: The CountDownLatch ensures that the main thread only proceeds after all chunks are processed.
+Thread Safety: This approach ensures proper thread synchronization without worrying about race conditions.
