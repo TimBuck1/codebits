@@ -1,1 +1,82 @@
 
+
+A SQL recursive query (also called a recursive common table expression, or recursive CTE) is a type of query that references itself to perform repetitive tasks, usually useful when working with hierarchical or nested data, like organizational charts, directory structures, or graph structures.
+
+Here’s a breakdown of how a recursive CTE works and an example to illustrate it:
+
+Structure of a Recursive CTE
+A recursive CTE has two main components:
+
+Anchor Query: The initial query, which fetches the base set of records.
+Recursive Query: The query that references the CTE itself to repeatedly process data.
+Together, these components let the query process a hierarchy of records. The recursive part stops once it reaches a specified condition (often when there are no more records to process).
+
+General Syntax
+sql
+Copy code
+WITH RECURSIVE cte_name AS (
+    -- Anchor Query
+    SELECT column1, column2, ...
+    FROM table_name
+    WHERE base_condition
+
+    UNION ALL
+
+    -- Recursive Query
+    SELECT column1, column2, ...
+    FROM table_name
+    JOIN cte_name ON join_condition
+    WHERE recursive_condition
+)
+SELECT * FROM cte_name;
+UNION ALL is often used to combine the anchor and recursive parts, allowing each iteration to build on the previous one.
+The recursive part continues until no more rows meet the recursive condition.
+Example: Employee Hierarchy
+Imagine a table employees with the following structure:
+
+plaintext
+Copy code
+id      | name       | manager_id
+--------|------------|------------
+1       | Alice      | NULL       -- Alice is the CEO (no manager)
+2       | Bob        | 1          -- Bob reports to Alice
+3       | Carol      | 1          -- Carol reports to Alice
+4       | Dave       | 2          -- Dave reports to Bob
+5       | Eve        | 2          -- Eve reports to Bob
+6       | Frank      | 3          -- Frank reports to Carol
+If you want to retrieve the hierarchy under Alice (id = 1), you could use a recursive CTE to do so.
+
+sql
+Copy code
+WITH RECURSIVE employee_hierarchy AS (
+    -- Anchor Query: Start with Alice (CEO)
+    SELECT id, name, manager_id, 1 AS level
+    FROM employees
+    WHERE id = 1
+
+    UNION ALL
+
+    -- Recursive Query: Find employees who report to the current employee
+    SELECT e.id, e.name, e.manager_id, eh.level + 1
+    FROM employees e
+    JOIN employee_hierarchy eh ON e.manager_id = eh.id
+)
+SELECT * FROM employee_hierarchy;
+Explanation
+Anchor Query: Starts with Alice, the CEO (id = 1), and initializes level as 1.
+Recursive Query: Finds employees who report to each manager in the employee_hierarchy CTE, incrementing the level by 1 with each recursive call.
+Termination: The recursion stops when there are no more employees reporting to those in the hierarchy.
+Output
+The result would look like this, showing each employee’s level in the hierarchy:
+
+plaintext
+Copy code
+id | name   | manager_id | level
+---|--------|------------|------
+1  | Alice  | NULL       | 1
+2  | Bob    | 1          | 2
+3  | Carol  | 1          | 2
+4  | Dave   | 2          | 3
+5  | Eve    | 2          | 3
+6  | Frank  | 3          | 3
+This result shows each employee’s hierarchy level relative to Alice.
