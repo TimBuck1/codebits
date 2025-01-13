@@ -1,10 +1,6 @@
 
 
-Get Outlook for Android
-From: Black Star <harishmathur377@gmail.com>
-Sent: Monday, January 13, 2025 10:11:21 PM
-To: brijesh_tiwari@hotmail.com <brijesh_tiwari@hotmail.com>
-Subject: Kafka
+
  
 Creating multiple Kafka consumers dynamically in a Spring Boot application involves using a configuration-driven approach. You can create and register multiple consumers for the same consumer group based on application configurations.
 
