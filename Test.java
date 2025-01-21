@@ -1,175 +1,143 @@
+Integrating embedded Kafka in a Cucumber test setup for a Spring application involves the following steps:
 
+1. Add Dependencies
+Add the required dependencies to your pom.xml or build.gradle:
 
+Maven:
 
- 
-Creating multiple Kafka consumers dynamically in a Spring Boot application involves using a configuration-driven approach. You can create and register multiple consumers for the same consumer group based on application configurations.
+xml
+Copy
+Edit
+<dependency>
+    <groupId>org.springframework.kafka</groupId>
+    <artifactId>spring-kafka-test</artifactId>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>io.cucumber</groupId>
+    <artifactId>cucumber-spring</artifactId>
+    <version>your-cucumber-version</version>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>io.cucumber</groupId>
+    <artifactId>cucumber-java</artifactId>
+    <version>your-cucumber-version</version>
+    <scope>test</scope>
+</dependency>
+Gradle:
 
+gradle
+Copy
+Edit
+testImplementation 'org.springframework.kafka:spring-kafka-test'
+testImplementation 'io.cucumber:cucumber-spring:your-cucumber-version'
+testImplementation 'io.cucumber:cucumber-java:your-cucumber-version'
+2. Enable Embedded Kafka
+Use the @EmbeddedKafka annotation from the spring-kafka-test library. Create a configuration class for your Kafka tests:
 
----
+java
+Copy
+Edit
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.test.context.EmbeddedKafka;
+import org.springframework.kafka.test.EmbeddedKafkaBroker;
 
-Step-by-Step Implementation
-
-1. Update Your Configuration
-
-Add a property to your application.yml or application.properties file to specify the number of consumers to create.
-
-
-kafka:
-  bootstrap-servers: localhost:9092
-  topic: your-topic-name
-  consumer-group: your-consumer-group
-  consumers: 10
-
-
-
-
----
-
-2. Define a Kafka Consumer Factory
-
-Use ConcurrentKafkaListenerContainerFactory to create a Kafka consumer container dynamically.
-
-
-@Configuration
-public class KafkaConsumerConfig {
-
-    @Value("${kafka.bootstrap-servers}")
-    private String bootstrapServers;
-
-    @Value("${kafka.consumer-group}")
-    private String consumerGroup;
-
-    @Bean
-    public Map<String, Object> consumerConfigs() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        return props;
-    }
+@TestConfiguration
+@EmbeddedKafka(partitions = 1, topics = {"test-topic"})
+public class KafkaTestConfig {
 
     @Bean
-    public ConsumerFactory<String, String> consumerFactory() {
-        return new DefaultKafkaConsumerFactory<>(consumerConfigs());
-    }
-
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, String> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory());
-        return factory;
+    public EmbeddedKafkaBroker embeddedKafkaBroker() {
+        return new EmbeddedKafkaBroker(1, true, "test-topic");
     }
 }
+3. Configure Kafka Properties
+In your test configuration (application.yml or application.properties), ensure that the application uses the embedded Kafka:
 
+yaml
+Copy
+Edit
+spring:
+  kafka:
+    bootstrap-servers: ${spring.embedded.kafka.brokers}
+4. Cucumber Glue Code
+Set up Cucumber glue code to produce and consume Kafka messages during tests:
 
+Producer:
 
+java
+Copy
+Edit
+@Autowired
+private KafkaTemplate<String, String> kafkaTemplate;
 
----
-
-3. Create Consumers Dynamically
-
-Use a @Bean or an initializer method to create multiple consumer containers based on the configuration.
-
-
-@Component
-public class KafkaConsumerInitializer {
-
-    private final KafkaMessageListenerContainer<String, String>[] consumers;
-    private final KafkaConsumerConfig kafkaConsumerConfig;
-    private final KafkaListenerEndpointRegistry registry;
-
-    @Value("${kafka.topic}")
-    private String topic;
-
-    @Value("${kafka.consumers}")
-    private int consumerCount;
-
-    public KafkaConsumerInitializer(
-            KafkaConsumerConfig kafkaConsumerConfig,
-            KafkaListenerEndpointRegistry registry) {
-        this.kafkaConsumerConfig = kafkaConsumerConfig;
-        this.registry = registry;
-        this.consumers = new KafkaMessageListenerContainer[consumerCount];
-    }
-
-    @EventListener(ApplicationReadyEvent.class)
-    public void initializeConsumers() {
-        for (int i = 0; i < consumerCount; i++) {
-            String containerId = "consumer-" + i;
-            consumers[i] = createContainer(containerId);
-            consumers[i].start();
-        }
-    }
-
-    private KafkaMessageListenerContainer<String, String> createContainer(String containerId) {
-        ContainerProperties containerProps = new ContainerProperties(topic);
-        containerProps.setGroupId(containerId); // Optional: If you want different group IDs for debugging
-        containerProps.setMessageListener((MessageListener<String, String>) record -> {
-            System.out.println("Received message: " + record.value() + " by " + containerId);
-        });
-
-        return new KafkaMessageListenerContainer<>(kafkaConsumerConfig.consumerFactory(), containerProps);
-    }
+public void sendMessage(String topic, String message) {
+    kafkaTemplate.send(topic, message);
 }
+Consumer:
 
-
-
-
----
-
-4. Add a KafkaListener for Each Consumer (Optional)
-
-Alternatively, use @KafkaListener annotations to create consumers dynamically with unique id values.
-
-
-@KafkaListener(
-        topics = "${kafka.topic}",
-        groupId = "${kafka.consumer-group}",
-        containerFactory = "kafkaListenerContainerFactory"
-)
+java
+Copy
+Edit
+@KafkaListener(topics = "test-topic", groupId = "test-group")
 public void listen(String message) {
-    System.out.println("Received Message: " + message);
+    // Logic to process the message
 }
+5. Step Definitions
+Write step definitions to interact with Kafka:
 
+java
+Copy
+Edit
+import static org.assertj.core.api.Assertions.assertThat;
 
+public class KafkaStepDefinitions {
 
+    @Autowired
+    private KafkaTestConfig kafkaTestConfig;
 
----
+    @Autowired
+    private KafkaTemplate<String, String> kafkaTemplate;
 
-5. Verify Consumers in the Kafka Group
+    @Autowired
+    private EmbeddedKafkaBroker embeddedKafka;
 
-When the application starts, you can check the consumer group using the following Kafka CLI command:
+    @When("a message {string} is sent to topic {string}")
+    public void aMessageIsSentToTopic(String message, String topic) {
+        kafkaTemplate.send(topic, message);
+    }
 
+    @Then("the message {string} should be consumed")
+    public void theMessageShouldBeConsumed(String expectedMessage) {
+        // Implement logic to verify the message was consumed
+        // For example, using a ConsumerRecord or asserting state
+    }
+}
+6. Cucumber Test Runner
+Create a test runner to execute the Cucumber tests:
 
-kafka-consumer-groups --bootstrap-server localhost:9092 --describe --group your-consumer-group
+java
+Copy
+Edit
+import io.cucumber.spring.CucumberContextConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 
-This should show 10 consumers (or the configured number) assigned to the group.
+@CucumberContextConfiguration
+@SpringBootTest
+public class CucumberSpringConfiguration {
+}
+7. Feature File
+Define the feature file to test Kafka functionality:
 
+gherkin
+Copy
+Edit
+Feature: Kafka integration
 
-
-
----
-
-Benefits of This Approach
-
-1. Dynamic Scaling:
-
-The number of consumers can be changed easily by updating the configuration.
-
-
-
-2. Centralized Management:
-
-All consumers are part of the same group and are managed together.
-
-
-
-3. Load Balancing:
-
-Kafka will automatically assign partitions among the consumers in the group.
-
-
-
+  Scenario: Sending and receiving messages
+    When a message "Hello Kafka" is sent to topic "test-topic"
+    Then the message "Hello Kafka" should be consumed
+8. Run the Tests
+Execute the Cucumber tests to validate your Kafka integration.
