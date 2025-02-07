@@ -1,135 +1,94 @@
-show me example of this Interactive Rebase to Clean History
-ChatGPT
-Sure! Interactive rebase is a powerful tool in Git that allows you to rewrite commit history. Here's a step-by-step example of how to use interactive rebase to clean up your commit history.
+import io.cucumber.datatable.DataTable;
+import io.cucumber.java.After;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
+import org.junit.jupiter.api.Assertions;
 
-Scenario
-Assume you have a feature branch with the following commits:
+import java.util.*;
 
-mathematica
-Copy code
-A -- B -- C -- D -- E (feature-branch)
-Here’s what you might want to do:
+public class TradeTaxStepDefinitions {
 
-Squash commits D and E into a single commit.
-Edit the commit message for C.
-Steps for Interactive Rebase
-1. Start Interactive Rebase
-First, start an interactive rebase for the last N commits. For this example, we'll rebase the last 4 commits:
+    private final Map<String, List<Tax>> tradeTaxes = new HashMap<>();
 
-bash
-Copy code
-git checkout feature-branch
-git rebase -i HEAD~4
-2. Edit the Rebase Instructions
-This command will open an editor with a list of commits and their hashes. You’ll see something like this:
+    // Step to receive trades
+    @When("trades received")
+    public void tradesReceived(DataTable table) {
+        List<Map<String, String>> rows = table.asMaps(String.class, String.class);
 
-mathematica
-Copy code
-pick <hash-of-C> C
-pick <hash-of-D> D
-pick <hash-of-E> E
-You can modify this list to clean up the commit history. For example:
+        for (Map<String, String> row : rows) {
+            String tradeId = row.get("tradeid");
+            int qty = Integer.parseInt(row.get("Qty"));
 
-mathematica
-Copy code
-pick <hash-of-C> C
-squash <hash-of-D> D
-squash <hash-of-E> E
-Explanation:
+            // Simulate tax calculation and storing result
+            List<Tax> calculatedTaxes = calculateTaxes(tradeId, qty);
+            tradeTaxes.put(tradeId, calculatedTaxes);
+        }
+    }
 
-pick: Use this commit as is.
-squash: Combine this commit with the previous commit.
-In this example, commits D and E are squashed into C.
+    // Step to verify taxes for a specific trade
+    @Then("verify tax for {string}")
+    public void verifyTaxForTrade(String tradeId, DataTable table) {
+        List<Tax> expectedTaxes = new ArrayList<>();
+        List<Map<String, String>> rows = table.asMaps(String.class, String.class);
 
-3. Save and Close the Editor
-After editing, save and close the editor. Git will start the rebase process and combine the commits as specified.
+        for (Map<String, String> row : rows) {
+            int taxAmount = Integer.parseInt(row.get("taxAmount"));
+            int rule = Integer.parseInt(row.get("rule"));
+            expectedTaxes.add(new Tax(taxAmount, rule));
+        }
 
-4. Edit Commit Messages
-If you squashed commits, Git will open another editor to combine commit messages. You’ll see something like:
+        // Fetch calculated taxes for the trade
+        List<Tax> actualTaxes = tradeTaxes.getOrDefault(tradeId, new ArrayList<>());
 
-bash
-Copy code
-# This is a combination of 3 commits.
-# The first commit's message is:
-C
+        // Assertion to verify both lists are equal
+        Assertions.assertEquals(expectedTaxes, actualTaxes, "Tax mismatch for trade: " + tradeId);
+    }
 
-# This is the commit message #2:
+    // Simulated tax calculation logic (replace this with actual implementation)
+    private List<Tax> calculateTaxes(String tradeId, int qty) {
+        List<Tax> taxes = new ArrayList<>();
+        if ("trade1".equals(tradeId)) {
+            taxes.add(new Tax(56, 1));
+            taxes.add(new Tax(98, 2));
+        } else if ("trade2".equals(tradeId)) {
+            taxes.add(new Tax(73, 5));
+            taxes.add(new Tax(23, 8));
+        }
+        return taxes;
+    }
 
-D
+    // Hook to clear data after each scenario
+    @After
+    public void tearDown() {
+        tradeTaxes.clear();
+    }
 
-# This is the commit message #3:
+    // Tax class for comparison
+    static class Tax {
+        int taxAmount;
+        int rule;
 
-E
-Edit this message to reflect the combined commits. For example:
+        Tax(int taxAmount, int rule) {
+            this.taxAmount = taxAmount;
+            this.rule = rule;
+        }
 
-diff
-Copy code
-Updated feature with new improvements
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            Tax tax = (Tax) obj;
+            return taxAmount == tax.taxAmount && rule == tax.rule;
+        }
 
-- C: Fixed bug X
-- D: Added feature Y
-- E: Improved performance
-Save and close the editor.
+        @Override
+        public int hashCode() {
+            return Objects.hash(taxAmount, rule);
+        }
 
-5. Resolve Conflicts (If Any)
-If there are conflicts, Git will pause the rebase. Resolve the conflicts in the affected files:
-
-bash
-Copy code
-# Resolve conflicts in your code
-git add <resolved-file>
-git rebase --continue
-Repeat this step until all conflicts are resolved and the rebase is complete.
-
-6. Force Push the Updated Branch
-After the rebase is complete, force push the changes to the remote branch:
-
-bash
-Copy code
-git push --force origin feature-branch
-Example Commands
-Start Interactive Rebase:
-
-bash
-Copy code
-git checkout feature-branch
-git rebase -i HEAD~4
-Edit and Save Rebase Instructions:
-
-mathematica
-Copy code
-pick <hash-of-C> C
-squash <hash-of-D> D
-squash <hash-of-E> E
-Edit and Save Combined Commit Message:
-
-diff
-Copy code
-Updated feature with new improvements
-
-- C: Fixed bug X
-- D: Added feature Y
-- E: Improved performance
-Resolve Conflicts (if needed):
-
-bash
-Copy code
-git add <resolved-file>
-git rebase --continue
-Force Push:
-
-bash
-Copy code
-git push --force origin feature-branch
-Key Points
-Squashing: Combines multiple commits into one, making the history cleaner.
-Editing Commit Messages: Allows you to create a meaningful commit message for the combined changes.
-Force Push: Required to update the remote branch after rewriting commit history.
-By following these steps, you can effectively clean up your commit history and maintain a more organized and understandable Git log.
-
-
-
-
-
-
-
+        @Override
+        public String toString() {
+            return "Tax{amount=" + taxAmount + ", rule=" + rule + "}";
+        }
+    }
+}
